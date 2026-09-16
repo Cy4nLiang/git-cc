@@ -1,1 +1,2 @@
 sandbox-loop: first feature isolated in feat/hello worktree
+probe: isolation still holds on the 0.2 maintenance line
