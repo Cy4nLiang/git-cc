@@ -1,0 +1,22 @@
+{
+  "worktree": { "baseRef": "fresh" },
+  "permissions": {
+    "allow": [
+      "Bash(git status *)", "Bash(git status)", "Bash(git log *)", "Bash(git diff *)", "Bash(git branch *)",
+      "Bash(git worktree list *)", "Bash(git fetch *)", "Bash(gh pr view *)", "Bash(gh pr checks *)", "Bash(gh run list *)"
+    ],
+    "ask": [ "Bash(gh release *)", "Bash(gh api *)", "Bash(gh repo delete *)" ],
+    "deny": [ "Edit(/.claude/hooks/**)", "Edit(/.claude/settings.json)", "Edit(/.githooks/**)", "Read(/.env)", "Read(/.env.*)" ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      { "matcher": "Bash",
+        "hooks": [ { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/guard-git.sh" } ] },
+      { "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [ { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/guard-edit.sh" } ] }
+    ],
+    "SessionStart": [
+      { "hooks": [ { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/session-start.sh" } ] }
+    ]
+  }
+}

@@ -1,0 +1,1063 @@
+<title>git-cc 版本管理蓝图</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --bg:#F4F5F7;--surface:#FFFFFF;--ink:#1B2130;--muted:#5B6475;--line:#D9DDE5;--line-strong:#B9C0CC;
+  --main:#2456C4;--feat:#B8701A;--spike:#8A93A3;--rel:#7B3FA0;--rc:#B8861A;--prod:#1F8A5B;--block:#C43D3D;
+  --main-soft:#E4EBFA;--feat-soft:#F8ECD9;--spike-soft:#EDEFF3;--rel-soft:#F0E4F7;--rc-soft:#FAF0D6;--prod-soft:#DDF2E7;--block-soft:#FADEDE;
+  --code-bg:#1C2130;--code-ink:#E4E8F0;--code-bar:#242A3A;--focus:#2456C4;
+  --sans:"IBM Plex Sans","PingFang SC","Hiragino Sans GB","Microsoft YaHei",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121620;--surface:#1A1F2B;--ink:#E4E8F0;--muted:#9AA3B5;--line:#2C3342;--line-strong:#3E4756;
+  --main:#7DA0F2;--feat:#E0A048;--spike:#8792A3;--rel:#BF92E6;--rc:#E2B24A;--prod:#52C58F;--block:#F07878;
+  --main-soft:#1E2A47;--feat-soft:#3A2C17;--spike-soft:#232935;--rel-soft:#32243F;--rc-soft:#3A2F14;--prod-soft:#153627;--block-soft:#3F1F1F;
+  --code-bg:#0F131B;--code-ink:#DDE2EA;--code-bar:#161B26;--focus:#7DA0F2;
+}}
+:root[data-theme="dark"]{
+  --bg:#121620;--surface:#1A1F2B;--ink:#E4E8F0;--muted:#9AA3B5;--line:#2C3342;--line-strong:#3E4756;
+  --main:#7DA0F2;--feat:#E0A048;--spike:#8792A3;--rel:#BF92E6;--rc:#E2B24A;--prod:#52C58F;--block:#F07878;
+  --main-soft:#1E2A47;--feat-soft:#3A2C17;--spike-soft:#232935;--rel-soft:#32243F;--rc-soft:#3A2F14;--prod-soft:#153627;--block-soft:#3F1F1F;
+  --code-bg:#0F131B;--code-ink:#DDE2EA;--code-bar:#161B26;--focus:#7DA0F2;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.7;padding-inline:16px;padding-block:0;-webkit-font-smoothing:antialiased}
+a{color:var(--main)}
+:focus-visible{outline:2px solid var(--focus);outline-offset:2px}
+.mono{font-family:var(--mono)}
+code{font-family:var(--mono);font-size:.92em;background:var(--spike-soft);padding:1px 5px;border-radius:3px}
+.wrap{max-width:1200px;margin:0 auto;display:grid;grid-template-columns:210px minmax(0,1fr);gap:56px}
+.toc{position:sticky;top:0;align-self:start;max-height:100vh;overflow:auto;padding-block:40px 24px}
+.toc .toc-t{font:500 11px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted);margin:0 0 12px}
+.toc ol{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:2px}
+.toc a{display:block;text-decoration:none;color:var(--muted);font-size:13.5px;padding:5px 10px;border-left:2px solid transparent;line-height:1.35}
+.toc a .n{font-family:var(--mono);font-size:11px;margin-right:6px;color:var(--muted)}
+.toc a:hover{color:var(--ink)}
+.toc a.on{color:var(--ink);border-left-color:var(--main);background:var(--surface)}
+.content{max-width:880px;min-width:0;padding-block:40px 80px}
+header.hero h1{font-size:34px;font-weight:600;letter-spacing:-.01em;line-height:1.2;margin:8px 0 10px;text-wrap:balance}
+.eyebrow{font:500 11.5px var(--mono);letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.lede{font-size:17px;line-height:1.6;max-width:62ch;margin:0 0 14px;color:var(--ink)}
+.meta{display:flex;flex-wrap:wrap;gap:6px 18px;font:12.5px var(--mono);color:var(--muted);margin:0 0 8px}
+.meta span,footer{overflow-wrap:anywhere}
+section{margin-top:56px;padding-top:8px}
+section>h2{font-size:24px;font-weight:600;letter-spacing:-.01em;line-height:1.25;margin:0 0 14px;text-wrap:balance}
+section>h2 .n{font:500 13px var(--mono);color:var(--muted);margin-right:10px;vertical-align:middle}
+h3{font-size:17.5px;font-weight:600;margin:32px 0 10px;line-height:1.3}
+h3 .n{font:500 12px var(--mono);color:var(--muted);margin-right:8px}
+p{margin:0 0 12px;max-width:70ch}
+ul.tight{margin:0 0 12px;padding-left:20px;max-width:75ch}
+ul.tight li{margin:4px 0}
+strong{font-weight:600}
+figure{margin:18px 0 22px;padding:16px 16px 12px;background:var(--surface);border:1px solid var(--line);border-radius:8px}
+figure .fig-scroll{overflow-x:auto}
+figure svg{display:block;max-width:100%;height:auto;min-width:640px;color:var(--ink);font-family:var(--sans);font-size:12px}
+figcaption{font-size:13px;color:var(--muted);margin-top:10px;line-height:1.5;max-width:80ch}
+/* svg classes */
+.ln{fill:none;stroke-width:2.5;stroke-linecap:round}
+.ln.main{stroke:var(--main);stroke-width:3.5}
+.ln.feat{stroke:var(--feat)}
+.ln.spike{stroke:var(--spike);stroke-dasharray:5 5}
+.ln.rel{stroke:var(--rel)}
+.ln.dash{stroke-dasharray:4 5;stroke-width:1.8}
+.ln.thin{stroke-width:1.5}
+.lane-rules line{stroke:var(--line);stroke-width:1;stroke-dasharray:2 6}
+.f-main{fill:var(--main)}.f-feat{fill:var(--feat)}.f-spike{fill:var(--spike)}.f-rel{fill:var(--rel)}.f-ink{fill:var(--ink)}.f-muted{fill:var(--muted)}.f-block{fill:var(--block)}.f-prod{fill:var(--prod)}
+.dot{stroke:var(--surface);stroke-width:2.5}
+.dot.hollow{fill:var(--surface);stroke:var(--rel);stroke-width:2.5}
+.t-main{fill:var(--main)}.t-feat{fill:var(--feat)}.t-spike{fill:var(--spike)}.t-rel{fill:var(--rel)}.t-muted{fill:var(--muted)}.t-ink{fill:var(--ink)}.t-block{fill:var(--block)}.t-prod{fill:var(--prod)}.t-rc{fill:var(--rc)}
+.t-mono{font-family:var(--mono)}.t-b{font-weight:600}
+.tag-rc{fill:var(--rc-soft);stroke:var(--rc);stroke-width:1.2}
+.tag-prod{fill:var(--prod-soft);stroke:var(--prod);stroke-width:1.2}
+.box{fill:var(--surface);stroke:var(--line-strong);stroke-width:1.2}
+.box.main{fill:var(--main-soft);stroke:var(--main)}.box.feat{fill:var(--feat-soft);stroke:var(--feat)}.box.rc{fill:var(--rc-soft);stroke:var(--rc)}.box.prod{fill:var(--prod-soft);stroke:var(--prod)}
+.box.na{fill:none;stroke:var(--line);stroke-dasharray:3 4}.box.ok{fill:var(--prod-soft);stroke:var(--prod)}
+.pill{fill:var(--spike-soft);stroke:none}.pill.rc{fill:var(--rc-soft)}.pill.prod{fill:var(--prod-soft)}.pill.main{fill:var(--main-soft)}
+.stop{fill:var(--block-soft);stroke:var(--block);stroke-width:1.5}
+.x{stroke:var(--block);stroke-width:2;stroke-linecap:round}
+.ok-mark{stroke:var(--prod);stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.flowline{stroke:var(--line-strong);stroke-width:1.6;fill:none}
+.flowline.ok{stroke:var(--prod)}
+.conn{fill:none;stroke:var(--line-strong);stroke-width:1.4}
+/* chips */
+.chip{display:inline-block;font:500 11.5px/1.6 var(--mono);padding:1px 8px;border-radius:999px;border:1px solid;white-space:nowrap}
+.chip-main{color:var(--main);background:var(--main-soft);border-color:var(--main)}
+.chip-feat{color:var(--feat);background:var(--feat-soft);border-color:var(--feat)}
+.chip-spike{color:var(--spike);background:var(--spike-soft);border-color:var(--spike)}
+.chip-rel{color:var(--rel);background:var(--rel-soft);border-color:var(--rel)}
+.chip-rc{color:var(--rc);background:var(--rc-soft);border-color:var(--rc)}
+.chip-prod{color:var(--prod);background:var(--prod-soft);border-color:var(--prod)}
+.chip-block{color:var(--block);background:var(--block-soft);border-color:var(--block)}
+/* table */
+.tbl{overflow-x:auto;margin:14px 0 18px;border:1px solid var(--line);border-radius:8px;background:var(--surface)}
+table{border-collapse:collapse;width:100%;min-width:760px;font-size:13.5px}
+th{font:500 11px var(--mono);letter-spacing:.08em;text-transform:uppercase;color:var(--muted);text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.5}
+tr:last-child td{border-bottom:0}
+td.k{white-space:nowrap}
+/* req grid */
+.req{display:grid;grid-template-columns:150px minmax(0,1fr);border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow:hidden}
+.req>div{padding:14px 16px;border-bottom:1px solid var(--line)}
+.req>div:nth-last-child(-n+2){border-bottom:0}
+.req .k{font-weight:600;display:flex;flex-direction:column;gap:6px;border-right:1px solid var(--line)}
+.req .k small{font:12px var(--mono);color:var(--muted);font-weight:400}
+.req .v{font-size:14px;line-height:1.6}
+.req .v p{margin:0;max-width:none}
+/* code */
+.code{background:var(--code-bg);color:var(--code-ink);border-radius:6px;overflow:hidden;margin:10px 0 14px;border:1px solid var(--line)}
+.code-bar{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:6px 8px 6px 12px;background:var(--code-bar);font:12px var(--mono);color:var(--code-ink);opacity:.95}
+.code-file{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.copy{font:500 11.5px var(--sans);color:var(--code-ink);background:transparent;border:1px solid rgba(255,255,255,.22);border-radius:4px;padding:2px 9px;cursor:pointer;white-space:nowrap}
+.copy:hover{background:rgba(255,255,255,.08)}
+.copy.done{border-color:var(--prod);color:var(--prod)}
+pre{margin:0;padding:12px 14px;overflow-x:auto;font:12.5px/1.6 var(--mono);tab-size:2}
+pre code{background:none;padding:0;font-size:inherit;color:inherit}
+/* fold */
+.fold{margin:10px 0}
+.fold>summary{cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px;font-size:13.5px;padding:9px 12px;border:1px solid var(--line);border-radius:6px;background:var(--surface)}
+.fold>summary::-webkit-details-marker{display:none}
+.fold>summary::before{content:"";width:0;height:0;border-left:6px solid var(--muted);border-top:5px solid transparent;border-bottom:5px solid transparent;transition:transform .15s}
+.fold[open]>summary::before{transform:rotate(90deg)}
+.fold[open]>summary{border-bottom-left-radius:0;border-bottom-right-radius:0}
+.fold>summary .fold-meta{margin-left:auto;font:12px var(--mono);color:var(--muted)}
+.fold>.code{margin-top:0;border-top-left-radius:0;border-top-right-radius:0;border-top:0}
+/* skills */
+.skills{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:14px 0}
+.skill{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:14px 16px;display:flex;flex-direction:column;gap:8px}
+.skill .name{font:500 15px var(--mono);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.skill .who{font:11px var(--mono);padding:1px 7px;border-radius:3px;border:1px solid var(--line-strong);color:var(--muted);white-space:nowrap}
+.skill .who.human{color:var(--block);border-color:var(--block);background:var(--block-soft)}
+.skill dl{margin:0;display:grid;grid-template-columns:52px minmax(0,1fr);gap:4px 10px;font-size:13.5px}
+.skill dt{color:var(--muted);font-size:12px;padding-top:1px}
+.skill dd{margin:0;line-height:1.55}
+/* chain */
+.chain{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:14px 0 12px}
+.chain .step{padding:6px 11px;border:1px solid var(--line);border-radius:5px;background:var(--surface);font-size:13.5px;line-height:1.4}
+.chain .step .mono{font-size:12.5px}
+.chain .step.hi{border-color:var(--main);background:var(--main-soft)}
+.chain .step.end{border-color:var(--prod);background:var(--prod-soft)}
+.chain .ar{color:var(--muted);display:inline-flex}
+/* steps flow */
+.flow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:14px 0}
+.flow .st{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:12px 12px 12px;font-size:13px;line-height:1.5;position:relative}
+.flow .st .num{font:500 11px var(--mono);color:var(--muted);letter-spacing:.08em;margin-bottom:6px;display:block}
+.flow .st b{display:block;font-weight:600;margin-bottom:4px;font-size:13.5px}
+.flow .st .mono{font-size:12px;color:var(--muted)}
+/* tabs */
+.tabs{display:flex;gap:2px;box-shadow:inset 0 -1px 0 var(--line);overflow-x:auto;margin:14px 0 0}
+.tab{padding:9px 14px;border:0;background:none;font:500 14px var(--sans);color:var(--muted);border-bottom:2px solid transparent;margin-bottom:0;cursor:pointer;white-space:nowrap}
+.tab[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--main)}
+.panel{padding-top:12px}
+.panel[hidden]{display:none}
+.panel p.ctx{font-size:13.5px;color:var(--muted);margin:0 0 6px}
+/* pitfalls */
+.pit{margin:14px 0;display:flex;flex-direction:column;gap:0;border:1px solid var(--line);border-radius:8px;background:var(--surface);overflow:hidden}
+.pit>div{padding:12px 16px;border-bottom:1px solid var(--line);font-size:14px;line-height:1.6}
+.pit>div:last-child{border-bottom:0}
+.pit dt{font-weight:600;margin-bottom:2px}
+.pit dd{margin:0;color:var(--ink);max-width:80ch}
+.note{border-left:3px solid var(--rc);background:var(--rc-soft);padding:10px 14px;border-radius:0 6px 6px 0;font-size:14px;margin:14px 0;max-width:80ch}
+.note.red{border-left-color:var(--block);background:var(--block-soft)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--muted);margin:6px 0 0}
+.legend .sw{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+footer{margin-top:64px;padding-top:18px;border-top:1px solid var(--line);font:12.5px var(--mono);color:var(--muted);line-height:1.7}
+@media (max-width:1080px){
+  .wrap{grid-template-columns:minmax(0,1fr);gap:0}
+  .toc{position:sticky;top:0;z-index:5;max-height:none;padding-block:10px;background:var(--bg);border-bottom:1px solid var(--line);margin-inline:-16px;padding-inline:16px}
+  .toc .toc-t{display:none}
+  .toc ol{flex-direction:row;overflow-x:auto;gap:4px;scrollbar-width:none}
+  .toc a{white-space:nowrap;border-left:0;border-bottom:2px solid transparent;padding:4px 8px;font-size:12.5px}
+  .toc a.on{border-bottom-color:var(--main);background:none}
+  .content{padding-top:24px}
+  section{scroll-margin-top:56px}
+}
+@media (max-width:640px){
+  header.hero h1{font-size:27px}
+  .skills{grid-template-columns:1fr}
+  .flow{grid-template-columns:1fr}
+  .req{grid-template-columns:1fr}
+  .req>div{border-bottom:0}
+  .req .k{border-right:0;padding-bottom:4px}
+  .req>.v:not(:last-child){border-bottom:1px solid var(--line)}
+  figure{padding:10px}
+}
+@media (prefers-reduced-motion: reduce){*{transition:none!important}}
+</style>
+
+<div class="wrap">
+<nav class="toc" aria-label="目录">
+  <p class="toc-t">目录</p>
+  <ol>
+    <li><a href="#s1"><span class="n">1</span>分支模型</a></li>
+    <li><a href="#s2"><span class="n">2</span>分支与环境</a></li>
+    <li><a href="#s3"><span class="n">3</span>五项需求</a></li>
+    <li><a href="#s4"><span class="n">4</span>晋升与版本号</a></li>
+    <li><a href="#s5"><span class="n">5</span>Claude Code 工作方式</a></li>
+    <li><a href="#s6"><span class="n">6</span>从零初始化</a></li>
+    <li><a href="#s7"><span class="n">7</span>日常流程速查</a></li>
+    <li><a href="#s8"><span class="n">8</span>注意事项与坑</a></li>
+    <li><a href="#s9"><span class="n">9</span>可选进阶</a></li>
+  </ol>
+</nav>
+
+<main class="content">
+<header class="hero">
+  <p class="eyebrow">Trunk-based · Tag Release · 每分支一个 Claude 会话</p>
+  <h1>git-cc 版本管理蓝图</h1>
+  <p class="lede">只有 <code>main</code> 一条长期分支。一切改动走短命分支加 PR squash；发布就是打 tag，rc 上测试，同一 commit 转正上生产；旧版本按需从正式 tag 切出 <code>release/X.Y</code>；每条分支一个 worktree、一个 Claude 会话；CLAUDE.md、hooks、pre-push、ruleset 四层护栏。</p>
+  <div class="meta"><span>macOS · Claude Code 2.1.270 · git 2.40 · gh 2.89</span><span>仓库 ~/workspace/git-cc</span><span>来源 .claude/specs/2026-09-14-version-management-plan.md</span></div>
+</header>
+
+<section id="s1">
+<h2><span class="n">§1</span>分支模型</h2>
+<p>下图是一段完整生命周期：两个功能分支合入 main，一次实验被丢弃，1.5.0 从 rc 转正，同时 1.4 线通过 hotfix 发出 1.4.3。</p>
+<figure>
+<div class="fig-scroll">
+<svg viewBox="0 0 1090 430" role="img" aria-label="分支模型：main 唯一主干，feat 和 fix 短命分支经 PR squash 合入，spike 永不合并，rc 与正式 tag 落在同一 commit，release/1.4 从 v1.4.2 切出并通过 hotfix cherry-pick 修复后发出 v1.4.3">
+<defs>
+  <marker id="ar-main" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="f-main"/></marker>
+  <marker id="ar-rel" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="f-rel"/></marker>
+</defs>
+<g class="lane-rules">
+  <line x1="165" y1="70" x2="1060" y2="70"/><line x1="165" y1="130" x2="1060" y2="130"/><line x1="165" y1="350" x2="1060" y2="350"/>
+</g>
+<g class="t-mono">
+  <text x="12" y="74" class="t-spike">spike/* · worktree-*</text>
+  <text x="12" y="134" class="t-feat">feat/* · fix/*</text>
+  <text x="12" y="214" class="t-main t-b">main</text>
+  <text x="12" y="294" class="t-rel">release/1.4</text>
+  <text x="12" y="354" class="t-rel">hotfix/1.4.3-*</text>
+</g>
+<!-- main -->
+<line x1="150" y1="210" x2="1060" y2="210" class="ln main" marker-end="url(#ar-main)"/>
+<!-- feat a -->
+<path d="M240,210 C258,210 252,130 270,130 H300 C318,130 312,210 330,210" class="ln feat"/>
+<circle cx="270" cy="130" r="5" class="f-feat dot"/><circle cx="300" cy="130" r="5" class="f-feat dot"/>
+<text x="285" y="117" text-anchor="middle" class="t-feat t-mono" font-size="11">feat/checkout-coupon</text>
+<!-- feat b -->
+<path d="M380,210 C398,210 392,130 410,130 H440 C458,130 452,210 470,210" class="ln feat"/>
+<circle cx="410" cy="130" r="5" class="f-feat dot"/><circle cx="440" cy="130" r="5" class="f-feat dot"/>
+<text x="425" y="117" text-anchor="middle" class="t-feat t-mono" font-size="11">feat/b</text>
+<!-- spike -->
+<path d="M500,210 C518,210 512,70 530,70 H620" class="ln spike"/>
+<circle cx="530" cy="70" r="5" class="f-spike dot"/><circle cx="560" cy="70" r="5" class="f-spike dot"/><circle cx="590" cy="70" r="5" class="f-spike dot"/><circle cx="620" cy="70" r="5" class="f-spike dot"/>
+<line x1="636" y1="64" x2="648" y2="76" class="x"/><line x1="648" y1="64" x2="636" y2="76" class="x"/>
+<text x="660" y="57" class="t-spike" font-size="11">永不合并 · 用完即删</text>
+<text x="575" y="57" text-anchor="middle" class="t-spike t-mono" font-size="11">worktree-try-redis</text>
+<!-- fix -->
+<path d="M680,210 C698,210 692,130 710,130 H740 C758,130 752,210 770,210" class="ln feat"/>
+<circle cx="710" cy="130" r="5" class="f-feat dot"/><circle cx="740" cy="130" r="5" class="f-feat dot"/>
+<text x="725" y="117" text-anchor="middle" class="t-feat t-mono" font-size="11">fix/null-price</text>
+<!-- main commits -->
+<circle cx="190" cy="210" r="7" class="f-main dot"/><circle cx="330" cy="210" r="7" class="f-main dot"/><circle cx="470" cy="210" r="7" class="f-main dot"/><circle cx="590" cy="210" r="7" class="f-main dot"/><circle cx="770" cy="210" r="7" class="f-main dot"/><circle cx="910" cy="210" r="7" class="f-main dot"/><circle cx="1000" cy="210" r="7" class="f-main dot"/>
+<text x="330" y="237" text-anchor="middle" class="t-muted" font-size="11">PR · squash</text>
+<text x="470" y="237" text-anchor="middle" class="t-muted" font-size="11">PR · squash</text>
+<text x="762" y="237" text-anchor="end" class="t-muted" font-size="11">PR · squash（fix）</text>
+<!-- tags -->
+<rect x="152" y="178" width="76" height="20" rx="4" class="tag-prod"/><text x="190" y="192" text-anchor="middle" class="t-prod t-mono" font-size="11">v1.4.2</text>
+<line x1="590" y1="170" x2="590" y2="203" class="ln thin" stroke="var(--rc)"/>
+<rect x="523" y="150" width="154" height="20" rx="4" class="tag-rc"/><text x="600" y="164" text-anchor="middle" class="t-rc t-mono" font-size="11">v1.5.0-rc.1 → staging</text>
+<line x1="910" y1="192" x2="910" y2="203" class="ln thin" stroke="var(--prod)"/>
+<rect x="827" y="146" width="166" height="20" rx="4" class="tag-rc"/><text x="910" y="160" text-anchor="middle" class="t-rc t-mono" font-size="11">v1.5.0-rc.2 → staging</text>
+<rect x="827" y="172" width="166" height="20" rx="4" class="tag-prod"/><text x="910" y="186" text-anchor="middle" class="t-prod t-mono" font-size="11">v1.5.0 → production</text>
+<path d="M999,146 H1003 V192 H999" class="ln thin" stroke="var(--muted)"/>
+<text x="1009" y="173" class="t-muted" font-size="11">同一 commit</text>
+<!-- release -->
+<line x1="190" y1="217" x2="190" y2="290" class="ln rel dash"/>
+<text x="198" y="262" class="t-rel" font-size="11">首次热修时才从 tag 切出</text>
+<line x1="190" y1="290" x2="1060" y2="290" class="ln rel" marker-end="url(#ar-rel)"/>
+<circle cx="190" cy="290" r="6" class="dot hollow" stroke="var(--rel)"/>
+<path d="M810,290 C828,290 822,350 840,350 H880 C898,350 892,290 910,290" class="ln rel"/>
+<circle cx="840" cy="350" r="5" class="f-rel dot"/><circle cx="880" cy="350" r="5" class="f-rel dot"/>
+<circle cx="910" cy="290" r="7" class="f-rel dot"/>
+<text x="860" y="373" text-anchor="middle" class="t-rel t-mono" font-size="11">hotfix/1.4.3-null-price</text>
+<text x="942" y="309" class="t-muted" font-size="11">PR · squash</text>
+<path d="M776,215 C800,250 800,330 832,346" class="ln rel dash" marker-end="url(#ar-rel)"/>
+<text x="800" y="336" text-anchor="end" class="t-rel t-mono" font-size="11">cherry-pick -x</text>
+<line x1="910" y1="266" x2="910" y2="283" class="ln thin" stroke="var(--prod)"/>
+<rect x="876" y="246" width="166" height="20" rx="4" class="tag-prod"/><text x="959" y="260" text-anchor="middle" class="t-prod t-mono" font-size="11">v1.4.3 → production</text>
+<!-- legend -->
+<g font-size="11">
+  <circle cx="150" cy="407" r="5" class="f-main"/><text x="160" y="411" class="t-muted">main 主干</text>
+  <circle cx="260" cy="407" r="5" class="f-feat"/><text x="270" y="411" class="t-muted">feat / fix 短命分支</text>
+  <line x1="400" y1="407" x2="428" y2="407" class="ln spike"/><text x="436" y="411" class="t-muted">spike / worktree-*（实验）</text>
+  <circle cx="610" cy="407" r="5" class="f-rel"/><text x="620" y="411" class="t-muted">release/X.Y 维护线 + hotfix</text>
+  <rect x="800" y="400" width="14" height="14" rx="3" class="tag-rc"/><text x="820" y="411" class="t-muted">rc → staging</text>
+  <rect x="920" y="400" width="14" height="14" rx="3" class="tag-prod"/><text x="940" y="411" class="t-muted">正式 → production</text>
+</g>
+</svg>
+</div>
+<figcaption>feat 和 fix 分支从 origin/main 切出，PR squash 后即删；rc.2 与 v1.5.0 落在同一 commit，测过的就是上线的；release/1.4 只在第一次热修时从 v1.4.2 创建，修复先进 main 再 cherry-pick 回去。</figcaption>
+</figure>
+</section>
+
+<section id="s2">
+<h2><span class="n">§2</span>分支与环境对应表</h2>
+<div class="tbl">
+<table>
+<thead><tr><th>分支 / tag</th><th>用途</th><th>对应环境</th><th>保护</th><th>谁能合入</th><th>生命周期</th></tr></thead>
+<tbody>
+<tr><td class="k"><span class="chip chip-main">main</span></td><td>唯一主干，永远可构建；所有 tag 的来源</td><td>dev（可选自动部署）</td><td>ruleset + hook + pre-push</td><td>仅 PR（squash，CI 绿）</td><td>永久</td></tr>
+<tr><td class="k"><span class="chip chip-feat">feat/* fix/* chore/*</span></td><td>日常开发，从 origin/main 切；另有 docs/、refactor/</td><td>本地 worktree + PR CI</td><td>无</td><td>作者 <span class="mono">gh pr merge --squash</span></td><td>≤ 2 天，合并即删</td></tr>
+<tr><td class="k"><span class="chip chip-spike">spike/* worktree-*</span></td><td>想法验证，允许脏提交</td><td>本地实验</td><td>CI 拒绝其 PR</td><td>永不合入</td><td>数小时到 2 天，结束即删</td></tr>
+<tr><td class="k"><span class="chip chip-rc">vX.Y.Z-rc.N</span></td><td>发布候选，QA 签收对象</td><td><strong>staging</strong></td><td>tag ruleset + hook</td><td><span class="mono">/release</span></td><td>永久不可变</td></tr>
+<tr><td class="k"><span class="chip chip-prod">vX.Y.Z</span></td><td>正式版本，必须与某 rc 同 commit</td><td><strong>production</strong></td><td>tag ruleset + hook + 环境审批</td><td><span class="mono">/release promote</span></td><td>永久不可变</td></tr>
+<tr><td class="k"><span class="chip chip-rel">release/X.Y</span></td><td>维护线，只从正式 tag vX.Y.P 切出，只收 hotfix/*</td><td>该版本线 production</td><td>ruleset + hook + pre-push</td><td>仅 PR（squash）</td><td>首次热修到 EOL</td></tr>
+<tr><td class="k"><span class="chip chip-rel">hotfix/X.Y.Z-*</span></td><td>针对 release/X.Y 的修复</td><td>本地 worktree + PR CI</td><td>无</td><td>作者</td><td>≤ 1 天</td></tr>
+</tbody>
+</table>
+</div>
+<p class="note">环境审批（GitHub Environments 的 required reviewers）与 ruleset 都要求仓库为 public，或 Pro/Team 套餐。Free 套餐的私有仓库两者都不可用，见 §8。</p>
+</section>
+
+<section id="s3">
+<h2><span class="n">§3</span>五项需求逐条满足</h2>
+<div class="req">
+  <div class="k"><span><span class="sw" style="background:var(--prod);display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px"></span>生产</span><small>tag vX.Y.Z</small></div>
+  <div class="v"><p>只有不含 <code>-rc.</code> 的 v* tag 触发 prod 部署，且 tag 必须落在已签收的 rc 同一 commit，由 <code>/release promote</code> 机械保证。prod job 绑定 GitHub Environment <code>production</code> 加人工审批。tag 不可删不可移。</p></div>
+  <div class="k"><span><span style="background:var(--rc);display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px"></span>测试</span><small>tag vX.Y.Z-rc.N</small></div>
+  <div class="v"><p>staging 只部署 rc tag，是显式晋升出的冻结快照，QA 签收后不会被下一次 main 合并覆盖。rc 期发现 main 混入不想发的内容，在 main 上 revert 走 PR 后重新打 rc，不从 rc 切 release 分支。</p></div>
+  <div class="k"><span><span style="background:var(--spike);display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px"></span>想法验证</span><small>spike/* worktree-*</small></div>
+  <div class="v"><p><code>claude --worktree try-x</code> 一条命令得到独立 worktree 加分支 <code>worktree-try-x</code>，或用 <code>/spike</code> 记录假设与截止日期。这两类分支的 PR 被 CI promotion-guard 拒绝；成功后用 <code>/new-feature</code> 重写干净版本。</p></div>
+  <div class="k"><span><span style="background:var(--main);display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px"></span>开发稳定运行</span><small>main</small></div>
+  <div class="v"><p>main 上每个 commit 都是一个完整、CI 绿、经 <code>/code-review</code> 的 PR；strict status check 保证合起来也是绿。默认策略是短分支加 worktree、不合半成品，feature flag 只作例外。主检出永远停在 main 只 <code>git pull --ff-only</code>，随时能跑。</p></div>
+  <div class="k"><span><span style="background:var(--rel);display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:6px"></span>多版本</span><small>release/X.Y</small></div>
+  <div class="v"><p>每次发布是 annotated tag，任何版本 <code>git worktree add ../git-cc.wt/v1.4.2 v1.4.2</code> 即可复现。main 承载 2.x，1.x 走 release/1.4。修复方向 fix-forward：先在 main 修好，再 cherry-pick -x 到各条仍在支持的 release 线；<code>/release --from</code> 用 patch-id 比对检查是否漏前移。</p></div>
+</div>
+</section>
+
+<section id="s4">
+<h2><span class="n">§4</span>环境晋升与版本号</h2>
+<figure>
+<div class="fig-scroll">
+<svg viewBox="0 0 940 240" role="img" aria-label="环境晋升：feat 分支经 PR 合入 main 对应 dev，打 rc tag 部署 staging，同一 commit 转正 tag 部署 production；staging 发现问题回到 main 修复后重新打 rc">
+<defs><marker id="ar-ink" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="f-muted"/></marker></defs>
+<g font-size="11" class="t-muted">
+  <text x="225" y="40" text-anchor="middle">PR · squash · CI 绿</text>
+  <text x="465" y="40" text-anchor="middle">/release X.Y.Z-rc.N</text>
+  <text x="705" y="40" text-anchor="middle">/release promote · 同一 commit</text>
+</g>
+<line x1="190" y1="85" x2="258" y2="85" class="flowline" marker-end="url(#ar-ink)"/>
+<line x1="430" y1="85" x2="498" y2="85" class="flowline" marker-end="url(#ar-ink)"/>
+<line x1="670" y1="85" x2="738" y2="85" class="flowline" marker-end="url(#ar-ink)"/>
+<rect x="20" y="50" width="170" height="70" rx="8" class="box feat"/>
+<text x="105" y="80" text-anchor="middle" class="t-feat t-mono t-b" font-size="13">feat/* · fix/*</text>
+<text x="105" y="100" text-anchor="middle" class="t-muted" font-size="11">短命分支，≤ 2 天</text>
+<rect x="260" y="50" width="170" height="70" rx="8" class="box main"/>
+<text x="345" y="80" text-anchor="middle" class="t-main t-mono t-b" font-size="14">main</text>
+<text x="345" y="100" text-anchor="middle" class="t-muted" font-size="11">每个 commit 都可构建</text>
+<rect x="500" y="50" width="170" height="70" rx="8" class="box rc"/>
+<text x="585" y="80" text-anchor="middle" class="t-rc t-mono t-b" font-size="13">tag vX.Y.Z-rc.N</text>
+<text x="585" y="100" text-anchor="middle" class="t-muted" font-size="11">冻结快照，QA 签收</text>
+<rect x="740" y="50" width="170" height="70" rx="8" class="box prod"/>
+<text x="825" y="80" text-anchor="middle" class="t-prod t-mono t-b" font-size="13">tag vX.Y.Z</text>
+<text x="825" y="100" text-anchor="middle" class="t-muted" font-size="11">与 rc 同一 commit</text>
+<rect x="50" y="132" width="110" height="20" rx="10" class="pill"/><text x="105" y="146" text-anchor="middle" class="t-muted" font-size="11">本地 worktree</text>
+<rect x="290" y="132" width="110" height="20" rx="10" class="pill main"/><text x="345" y="146" text-anchor="middle" class="t-main" font-size="11">dev（可选部署）</text>
+<rect x="530" y="132" width="110" height="20" rx="10" class="pill rc"/><text x="585" y="146" text-anchor="middle" class="t-rc" font-size="11">staging</text>
+<rect x="770" y="132" width="110" height="20" rx="10" class="pill prod"/><text x="825" y="146" text-anchor="middle" class="t-prod" font-size="11">production</text>
+<path d="M585,152 V196 H345 V158" class="flowline" stroke-dasharray="4 4" marker-end="url(#ar-ink)"/>
+<text x="465" y="214" text-anchor="middle" class="t-muted" font-size="11">staging 发现问题：fix/* PR 合入 main，再打 rc.N+1（不改 rc，不从 rc 切分支）</text>
+</svg>
+</div>
+<figcaption>三个环境对应三种“物”：dev 跟随 main 的最新 commit，staging 只认 rc tag，production 只认正式 tag。晋升是显式动作，rc 期的修正只在 main 上做；线上回滚首选重新部署上一个正式 tag。</figcaption>
+</figure>
+<h3>版本号与 tag 规则</h3>
+<ul class="tight">
+<li><strong>SemVer</strong>：<code>vMAJOR.MINOR.PATCH</code>，候选 <code>vMAJOR.MINOR.PATCH-rc.N</code>。全部 <code>git tag -a</code>，永不删除或移动，永不 <code>git push --tags</code>，只推单个 tag。</li>
+<li><strong>升级判定</strong>：PR 标题含 <code>!</code> 或 BREAKING CHANGE 升 MAJOR；含 feat 升 MINOR；只有 fix、chore 等升 PATCH。release/X.Y 只允许 PATCH。</li>
+<li><strong>MAJOR 检查点</strong>：<code>/release</code> 检测到 MAJOR 递增时，先提示从上一大版本最后正式 tag 建 release/X.Y 维护线，再打新 tag。</li>
+<li><strong>版本号真源是 tag</strong>：CI 用 <code>git describe --tags --always</code> 注入 APP_VERSION。若必须写进 package.json，在 QA 周期开始前先走 <code>chore(release): bump</code> PR。</li>
+<li><strong>提交与 changelog</strong>：Conventional Commits，squash 信息等于 PR 标题；PR 必须打 label（feat、fix、hotfix、breaking、chore、skip-changelog），<code>.github/release.yml</code> 按 label 分类生成 Release notes。</li>
+<li><strong>维护线发版</strong>：<code>gh release create --latest=false</code>，避免 1.4.3 盖过 2.x 成为 latest。</li>
+</ul>
+</section>
+
+<section id="s5">
+<h2><span class="n">§5</span>Claude Code 工作方式</h2>
+
+<h3><span class="n">5.1</span>一条分支 = 一个 worktree = 一个 Claude 会话</h3>
+<figure>
+<div class="fig-scroll">
+<svg viewBox="0 0 960 330" role="img" aria-label="主检出停在 main，共享 .git 与 settings.local.json；四个 linked worktree 各自独立 HEAD、工作区、.env 与依赖，各跑一个 Claude 会话">
+<rect x="20" y="60" width="262" height="212" rx="8" class="box"/>
+<text x="36" y="88" class="t-ink t-mono t-b" font-size="13">~/workspace/git-cc</text>
+<text x="36" y="107" class="t-muted" font-size="11">主检出 · 永远在 main · 终端 1</text>
+<line x1="36" y1="118" x2="266" y2="118" stroke="var(--line)"/>
+<text x="36" y="141" class="t-ink t-b" font-size="12">.git（所有 worktree 共享）</text>
+<text x="48" y="159" class="t-muted" font-size="11">refs · tags · config · stash</text>
+<text x="48" y="175" class="t-muted" font-size="11">core.hooksPath → .githooks（绝对路径）</text>
+<text x="36" y="199" class="t-ink t-b t-mono" font-size="12">.claude/settings.local.json</text>
+<text x="48" y="217" class="t-muted" font-size="11">权限记忆，对所有 worktree 生效</text>
+<text x="36" y="246" class="t-muted" font-size="11">只做：git pull --ff-only · review · /release</text>
+<g class="conn">
+  <path d="M282,150 C340,150 340,48 400,48"/>
+  <path d="M282,150 C340,150 340,120 400,120"/>
+  <path d="M282,150 C340,150 340,192 400,192"/>
+  <path d="M282,236 C340,236 340,264 400,264"/>
+</g>
+<text x="394" y="38" text-anchor="end" class="t-muted t-mono" font-size="10.5">git worktree add</text>
+<text x="394" y="286" text-anchor="end" class="t-muted t-mono" font-size="10.5">claude --worktree</text>
+<g>
+  <rect x="400" y="20" width="540" height="56" rx="8" class="box"/>
+  <text x="416" y="42" class="t-ink t-mono" font-size="12">../git-cc.wt/checkout-coupon/</text>
+  <rect x="640" y="28" width="150" height="20" rx="10" class="pill" style="fill:var(--feat-soft)"/><text x="715" y="42" text-anchor="middle" class="t-feat t-mono" font-size="11">feat/checkout-coupon</text>
+  <text x="416" y="64" class="t-muted" font-size="11">终端 2 · claude -n feat-checkout-coupon</text>
+</g>
+<g>
+  <rect x="400" y="92" width="540" height="56" rx="8" class="box"/>
+  <text x="416" y="114" class="t-ink t-mono" font-size="12">../git-cc.wt/hotfix-1.4.3/</text>
+  <rect x="640" y="100" width="170" height="20" rx="10" class="pill" style="fill:var(--rel-soft)"/><text x="725" y="114" text-anchor="middle" class="t-rel t-mono" font-size="11">hotfix/1.4.3-null-price</text>
+  <text x="416" y="136" class="t-muted" font-size="11">终端 3 · claude -n hotfix-1.4.3</text>
+</g>
+<g>
+  <rect x="400" y="164" width="540" height="56" rx="8" class="box"/>
+  <text x="416" y="186" class="t-ink t-mono" font-size="12">../git-cc.wt/release-1.4/</text>
+  <rect x="640" y="172" width="110" height="20" rx="10" class="pill" style="fill:var(--rel-soft)"/><text x="695" y="186" text-anchor="middle" class="t-rel t-mono" font-size="11">release/1.4</text>
+  <text x="416" y="208" class="t-muted" font-size="11">常驻 · 只看代码、打 tag，不在这里 commit</text>
+</g>
+<g>
+  <rect x="400" y="236" width="540" height="56" rx="8" class="box" stroke-dasharray="4 4"/>
+  <text x="416" y="258" class="t-ink t-mono" font-size="12">.claude/worktrees/try-redis/</text>
+  <rect x="640" y="244" width="150" height="20" rx="10" class="pill"/><text x="715" y="258" text-anchor="middle" class="t-spike t-mono" font-size="11">worktree-try-redis</text>
+  <text x="416" y="280" class="t-muted" font-size="11">终端 4 · 实验 · 用完即删</text>
+</g>
+<text x="20" y="312" class="t-muted" font-size="11">每个 worktree 独立：HEAD · index · 工作区 · .env · node_modules · PORT　｜　同一分支不能开两个 worktree；git stash 全仓库共享，所以禁用</text>
+</svg>
+</div>
+<figcaption>主检出只做 pull、review 和发版；正式工作在 ../git-cc.wt/ 下的手工 worktree，实验用 claude --worktree 放在 .claude/worktrees/。权限记忆统一写在主检出的 settings.local.json，新 worktree 不会再弹一遍。</figcaption>
+</figure>
+<div class="code "><div class="code-bar"><span class="code-file">目录布局</span><button class="copy" type="button" aria-live="polite" aria-label="复制 目录布局">复制</button></div><pre><code>~/workspace/git-cc/            主检出：永远在 main，只 pull、review、发版；.claude/worktrees/ 放 spike
+~/workspace/git-cc.wt/&lt;name&gt;/  手工 worktree：feat / fix / hotfix / release 维护线，各自一个终端一个会话</code></pre></div>
+<div class="code "><div class="code-bar"><span class="code-file">终端：worktree 与会话</span><button class="copy" type="button" aria-live="polite" aria-label="复制 终端：worktree 与会话">复制</button></div><pre><code># 正式工作（feat/fix/hotfix）：手工 worktree（等价于 /new-feature 做的事）
+cd ~/workspace/git-cc &amp;&amp; git fetch origin --prune
+git worktree add ../git-cc.wt/checkout-coupon -b feat/checkout-coupon origin/main
+cd ../git-cc.wt/checkout-coupon &amp;&amp; bash scripts/wt-setup.sh &amp;&amp; claude -n feat-checkout-coupon
+
+# 想法验证：Claude 内置 worktree（目录 .claude/worktrees/try-redis，分支 worktree-try-redis，基线 origin/HEAD，缺失时按 origin/main → origin/master）
+cd ~/workspace/git-cc &amp;&amp; claude --worktree try-redis          # 加 --tmux 可在 iTerm2 开独立面板
+# 会话中途也可让 Claude 用 EnterWorktree 工具自建 worktree；退出用 ExitWorktree
+
+# 并行：终端 1 主检出 review/发版，终端 2 feat，终端 3 hotfix，终端 4 spike
+claude --from-pr 42        # 找回创建某 PR 的会话；claude -c 在某目录续最近会话
+
+# 清理
+git worktree remove ../git-cc.wt/checkout-coupon &amp;&amp; git branch -D feat/checkout-coupon
+git worktree unlock .claude/worktrees/try-redis 2&gt;/dev/null; git worktree remove --force .claude/worktrees/try-redis
+git branch -D worktree-try-redis &amp;&amp; git worktree prune</code></pre></div>
+<p><code>scripts/wt-setup.sh</code> 幂等：复制 .env 与 CLAUDE.local.md，按路径 hash 分配独立端口，有 lockfile 才装依赖。<code>.worktreeinclude</code> 让 <code>claude --worktree</code> 自动复制被 gitignore 的文件。</p>
+<details class="fold"><summary><span class="mono">scripts/wt-setup.sh</span><span class="fold-meta">9 行</span></summary><div class="code "><div class="code-bar"><span class="code-file">scripts/wt-setup.sh</span><button class="copy" type="button" aria-live="polite" aria-label="复制 scripts/wt-setup.sh">复制</button></div><pre><code>#!/usr/bin/env bash
+set -euo pipefail
+root="$(git rev-parse --show-toplevel)"; main="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"
+cd "$root"
+for f in .env .env.local CLAUDE.local.md; do [ -f "$main/$f" ] &amp;&amp; [ ! -f "$f" ] &amp;&amp; cp "$main/$f" "$f"; done   # 1. 本地配置
+port=$((3000 + $(printf '%s' "$root" | cksum | cut -d' ' -f1) % 1000))                                        # 2. 独立端口
+grep -q '^PORT=' .env 2&gt;/dev/null &amp;&amp; sed -i '' "s/^PORT=.*/PORT=$port/" .env || echo "PORT=$port" &gt;&gt; .env
+[ -f package-lock.json ] &amp;&amp; npm ci --no-audit --no-fund                                                        # 3. 依赖
+echo "worktree ready: $root (PORT=$port)"</code></pre></div></details>
+<div class="code "><div class="code-bar"><span class="code-file">.worktreeinclude</span><button class="copy" type="button" aria-live="polite" aria-label="复制 .worktreeinclude">复制</button></div><pre><code>.env
+.env.local
+CLAUDE.local.md</code></pre></div>
+
+<h3><span class="n">5.2</span>CLAUDE.md 规则片段</h3>
+<p>粘贴进仓库根目录的 CLAUDE.md。它随分支走，每个 worktree 读到的是自己分支上的版本。</p>
+<details class="fold" open><summary><span class="mono">CLAUDE.md（片段）</span><span class="fold-meta">22 行</span></summary><div class="code "><div class="code-bar"><span class="code-file">CLAUDE.md（片段）</span><button class="copy" type="button" aria-live="polite" aria-label="复制 CLAUDE.md（片段）">复制</button></div><pre><code>## Git 工作流（Trunk-based，必须遵守）
+### 分支
+- `main` 是唯一长期分支。禁止在 main / release/* 上编辑文件、commit、merge、rebase、cherry-pick、push（hooks 会拦截，被拦时不要绕过）。
+- 任何改动先开短分支：`feat/&lt;scope&gt;-&lt;desc&gt;`、`fix/&lt;scope&gt;-&lt;desc&gt;`、`chore/*`、`docs/*`、`refactor/*`、`hotfix/&lt;X.Y.Z&gt;-&lt;desc&gt;`；只用 `[a-z0-9-/.]`。一个分支只做一件事，目标 ≤ 2 天；做不完就拆 PR，不合半成品。
+- 正式工作只用 `/new-feature &lt;name&gt;`（手工 worktree，分支名合规）。`spike/*` 与 `worktree-*`（claude --worktree / EnterWorktree 创建）是实验分支：永不 `gh pr create`；若已在 `worktree-*` 上做了正式工作，PR 前 `git branch -m feat/&lt;name&gt;`。
+- `release/X.Y` 只能由 /hotfix 从正式 tag 创建；同样只接受 PR。
+### 提交
+- Conventional Commits：`type(scope): subject`，type ∈ feat|fix|docs|refactor|test|chore|perf|ci|build|revert，英文祈使句 ≤ 72 字符；破坏性变更 `type!:` 或 `BREAKING CHANGE:` footer。
+- 禁止：`--no-verify`、`git push --force`（自己的 feat 分支允许 `--force-with-lease`）、`git push --tags`、删除或移动 tag、`git stash`（跨 worktree 共享会串）、修改 `core.hooksPath`、设置 `ALLOW_PROTECTED_PUSH`、编辑 `.claude/hooks/**`、`.claude/settings.json`、`.githooks/**`（除非用户明确要求）。
+- feature flag 只作例外：配置键 `FLAG_&lt;NAME&gt;` 默认关闭，同时建 issue，全量后一周内删除。
+### 合并前清单（开 PR 前逐项做）
+1. `git fetch origin &amp;&amp; git rebase origin/main`（hotfix 用 `origin/release/X.Y`），重跑测试。
+2. `/code-review`：修完所有 CONFIRMED；PLAUSIBLE 逐条说明取舍。大改动 `/code-review high` 或 `/code-review ultra`。
+3. 涉及认证/权限/用户输入/依赖升级/外部调用/文件或命令执行 → 再跑 `/security-review`。
+4. `gh pr create --base main --fill --label &lt;feat|fix|chore&gt;`（hotfix：`--base release/X.Y --label hotfix`）。PR 标题就是 squash 信息，必须符合规范。
+5. `gh pr checks --watch` 全绿后告诉用户；除非用户明确要求，不要自己 `gh pr merge`；永远不用 `--admin`。
+### 发布与回滚
+- 版本号只来自 tag；`vX.Y.Z-rc.N` → staging，`vX.Y.Z` → production，二者必须同一 commit。发布/热修只走 `/release`、`/hotfix`。
+- 回滚三级：1) 重新部署上一个正式 tag（首选，不动 git）；2) 开 `fix/revert-&lt;sha&gt;` 分支 `git revert &lt;squash-sha&gt;` 走 PR，再打新 PATCH；3) 永不 force、永不删 tag。
+### 并行会话与 worktree
+- 每个会话只在自己的 worktree 里工作；不要 `cd`/`git -C` 到别的 worktree 或主检出执行 git 命令。唯一例外：/new-feature、/hotfix、/spike 刚创建好 worktree 后，允许执行一次 `cd &lt;新 worktree&gt; &amp;&amp; bash scripts/wt-setup.sh`，之后仍回到本会话自己的目录。
+- 开始改动前先 `git branch --show-current`；在 main/release/* 上就先调用 /new-feature &lt;name&gt;（这个 skill 允许你自行调用，release/hotfix 则只能由用户触发）。新 worktree 先 `bash scripts/wt-setup.sh`，dev server 端口读 `.env` 的 `PORT`。</code></pre></div></details>
+
+<h3><span class="n">5.3</span>hooks 护栏：四层中的三个强制层</h3>
+<figure>
+<div class="fig-scroll">
+<svg viewBox="0 0 1000 300" role="img" aria-label="三层护栏：Claude 会话被 PreToolUse hook 以 exit 2 拦下；人在终端被 git pre-push 拒绝；强行绕过本地的推送被 GitHub ruleset 拒绝；只有 PR squash 合并能到达 origin/main">
+<defs><marker id="ar-ok" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" class="f-prod"/></marker></defs>
+<g font-size="11" class="t-ink t-b">
+  <text x="320" y="26" text-anchor="middle">第 1 层 · Claude PreToolUse hook</text>
+  <text x="540" y="26" text-anchor="middle">第 2 层 · git pre-push（本地）</text>
+  <text x="760" y="26" text-anchor="middle">第 3 层 · GitHub ruleset（服务端）</text>
+</g>
+<g font-size="10.5" class="t-muted t-mono">
+  <text x="320" y="42" text-anchor="middle">guard-git.sh · guard-edit.sh</text>
+  <text x="540" y="42" text-anchor="middle">.githooks/pre-push</text>
+  <text x="760" y="42" text-anchor="middle">protect-main / release / tags</text>
+</g>
+<rect x="870" y="62" width="115" height="194" rx="8" class="box main"/>
+<text x="927" y="150" text-anchor="middle" class="t-main t-mono t-b" font-size="12">origin/main</text>
+<text x="927" y="168" text-anchor="middle" class="t-main t-mono" font-size="11">release/*</text>
+<text x="927" y="186" text-anchor="middle" class="t-main t-mono" font-size="11">v* tags</text>
+<!-- row 1 -->
+<text x="20" y="80" class="t-ink t-b" font-size="12.5">Claude 会话</text>
+<text x="20" y="96" class="t-muted t-mono" font-size="10.5">git push origin HEAD:main</text>
+<line x1="222" y1="84" x2="250" y2="84" class="flowline"/>
+<rect x="250" y="69" width="140" height="30" rx="4" class="box"/><text x="320" y="88" text-anchor="middle" class="t-ink t-mono" font-size="11.5">guard-git.sh</text>
+<line x1="390" y1="84" x2="401" y2="84" class="flowline"/>
+<circle cx="411" cy="84" r="9" class="stop"/><line x1="407" y1="80" x2="415" y2="88" class="x"/><line x1="415" y1="80" x2="407" y2="88" class="x"/>
+<text x="428" y="88" class="t-block" font-size="10.5">exit 2，stderr 回给模型，命令不执行</text>
+<!-- row 2 -->
+<text x="20" y="132" class="t-ink t-b" font-size="12.5">人，在终端</text>
+<text x="20" y="148" class="t-muted t-mono" font-size="10.5">git push origin main</text>
+<line x1="222" y1="136" x2="250" y2="136" class="flowline"/>
+<rect x="250" y="121" width="140" height="30" rx="4" class="box na"/><text x="320" y="140" text-anchor="middle" class="t-muted" font-size="11">不经过</text>
+<line x1="390" y1="136" x2="470" y2="136" class="flowline"/>
+<rect x="470" y="121" width="140" height="30" rx="4" class="box"/><text x="540" y="140" text-anchor="middle" class="t-ink t-mono" font-size="11.5">pre-push</text>
+<line x1="610" y1="136" x2="621" y2="136" class="flowline"/>
+<circle cx="631" cy="136" r="9" class="stop"/><line x1="627" y1="132" x2="635" y2="140" class="x"/><line x1="635" y1="132" x2="627" y2="140" class="x"/>
+<text x="648" y="140" class="t-block" font-size="10.5">本地拒绝，没有发出网络请求</text>
+<!-- row 3 -->
+<text x="20" y="184" class="t-ink t-b" font-size="12.5">人，强行绕过本地</text>
+<text x="20" y="200" class="t-muted t-mono" font-size="10.5">ALLOW_PROTECTED_PUSH=1 git push</text>
+<line x1="222" y1="188" x2="250" y2="188" class="flowline"/>
+<rect x="250" y="173" width="140" height="30" rx="4" class="box na"/><text x="320" y="192" text-anchor="middle" class="t-muted" font-size="11">不经过</text>
+<line x1="390" y1="188" x2="470" y2="188" class="flowline"/>
+<rect x="470" y="173" width="140" height="30" rx="4" class="box na"/><text x="540" y="192" text-anchor="middle" class="t-muted" font-size="11">被跳过</text>
+<line x1="610" y1="188" x2="690" y2="188" class="flowline"/>
+<rect x="690" y="173" width="140" height="30" rx="4" class="box"/><text x="760" y="192" text-anchor="middle" class="t-ink t-mono" font-size="11.5">ruleset</text>
+<line x1="830" y1="188" x2="841" y2="188" class="flowline"/>
+<circle cx="851" cy="188" r="9" class="stop"/><line x1="847" y1="184" x2="855" y2="192" class="x"/><line x1="855" y1="184" x2="847" y2="192" class="x"/>
+<text x="858" y="218" text-anchor="end" class="t-block" font-size="10.5">服务端拒绝。Free 私有仓库没有这一层，会直达</text>
+<!-- row 4 -->
+<text x="20" y="240" class="t-ink t-b" font-size="12.5">PR 合并（唯一放行）</text>
+<text x="20" y="256" class="t-muted t-mono" font-size="10.5">gh pr merge --squash · CI 绿</text>
+<line x1="222" y1="244" x2="250" y2="244" class="flowline ok"/>
+<rect x="250" y="229" width="140" height="30" rx="4" class="box ok"/><path d="M312,244 l5,5 l10,-10" class="ok-mark"/>
+<line x1="390" y1="244" x2="470" y2="244" class="flowline ok"/>
+<rect x="470" y="229" width="140" height="30" rx="4" class="box na"/><text x="540" y="248" text-anchor="middle" class="t-muted" font-size="11">不经过（远端合并）</text>
+<line x1="610" y1="244" x2="690" y2="244" class="flowline ok"/>
+<rect x="690" y="229" width="140" height="30" rx="4" class="box ok"/><path d="M752,244 l5,5 l10,-10" class="ok-mark"/>
+<line x1="830" y1="244" x2="862" y2="244" class="flowline ok" marker-end="url(#ar-ok)"/>
+<text x="560" y="284" text-anchor="middle" class="t-prod" font-size="11">唯一放行路径：PR · squash · ci 与 promotion-guard 两个 check 都绿</text>
+</svg>
+</div>
+<figcaption>CLAUDE.md 是第一层约定，不做强制，图中未画。hook 只拦 Claude 的工具调用，是护栏不是安全边界，已知绕过写在 §8；pre-push 对人和 Claude 都生效，是本地的强制层；ruleset 是服务端的最终裁决。</figcaption>
+</figure>
+<ul class="tight">
+<li>脚本一律用 stdin JSON 的 <code>cwd</code> 判断分支，<code>$CLAUDE_PROJECT_DIR</code> 只用来定位脚本自身。<code>claude --worktree</code> 启动时两者都是 worktree 根；会话中途 EnterWorktree 后 <code>$CLAUDE_PROJECT_DIR</code> 仍是主检出根，而 <code>cwd</code> 是 worktree 根，所以判分支只信 cwd。</li>
+<li><code>permissions.deny</code> 路径必须用 <code>/</code> 前缀（相对项目根）。裸路径或 <code>./</code> 相对当前工作目录解析，Claude 一旦 <code>cd</code> 过就静默失效，而这组 deny 正是防止模型改护栏的层。</li>
+<li>不用 <code>if</code> 预过滤，脚本自带 fast-path；不写 <code>timeout</code> 字段；阻止方式用已核实的 exit 2 加 stderr。</li>
+</ul>
+<details class="fold"><summary><span class="mono">.claude/settings.json</span><span class="fold-meta">入库 · 22 行</span></summary><div class="code "><div class="code-bar"><span class="code-file">.claude/settings.json</span><button class="copy" type="button" aria-live="polite" aria-label="复制 .claude/settings.json">复制</button></div><pre><code>{
+  "worktree": { "baseRef": "fresh" },
+  "permissions": {
+    "allow": [
+      "Bash(git status *)", "Bash(git status)", "Bash(git log *)", "Bash(git diff *)", "Bash(git branch *)",
+      "Bash(git worktree list *)", "Bash(git fetch *)", "Bash(gh pr view *)", "Bash(gh pr checks *)", "Bash(gh run list *)"
+    ],
+    "ask": [ "Bash(gh release *)", "Bash(gh api *)", "Bash(gh repo delete *)" ],
+    "deny": [ "Edit(/.claude/hooks/**)", "Edit(/.claude/settings.json)", "Edit(/.githooks/**)", "Read(/.env)", "Read(/.env.*)" ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      { "matcher": "Bash",
+        "hooks": [ { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/guard-git.sh" } ] },
+      { "matcher": "Edit|Write|MultiEdit|NotebookEdit",
+        "hooks": [ { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/guard-edit.sh" } ] }
+    ],
+    "SessionStart": [
+      { "hooks": [ { "type": "command", "command": "bash \"$CLAUDE_PROJECT_DIR\"/.claude/hooks/session-start.sh" } ] }
+    ]
+  }
+}</code></pre></div></details>
+<details class="fold"><summary><span class="mono">.claude/hooks/guard-git.sh</span><span class="fold-meta">141 条用例实测 · 80 行</span></summary><div class="code "><div class="code-bar"><span class="code-file">.claude/hooks/guard-git.sh</span><button class="copy" type="button" aria-live="polite" aria-label="复制 .claude/hooks/guard-git.sh">复制</button></div><pre><code>#!/usr/bin/env bash
+# PreToolUse hook (matcher: Bash). Exit 2 = block, stderr goes back to Claude.
+# Guard rail for Claude only; humans are covered by .githooks/pre-push, GitHub by rulesets.
+set -uf
+input="$(cat)"
+cmd="$(printf '%s' "$input" | jq -r '.tool_input.command // empty')"
+[ -z "$cmd" ] &amp;&amp; exit 0
+case "$cmd" in *git*|*gh\ *) ;; *) exit 0 ;; esac          # fast path
+
+PROTECTED_RE='^(main|master|release/[0-9]+\.[0-9]+)$'
+PROTECTED_NAMES='(main|master|release/[0-9]+\.[0-9]+)'
+TAG_RE='^(refs/tags/)?v[0-9]+\.[0-9]+\.[0-9]+(-[A-Za-z0-9.]+)?$'
+L='(^|[[:space:]:+=])'            # what may precede a ref name
+R='([[:space:]:;|&amp;)`]|$)'         # what may follow a ref name
+deny() { printf 'BLOCKED by .claude/hooks/guard-git.sh: %s\n' "$1" &gt;&amp;2; exit 2; }
+
+# Which repo does the command act on?  honour `git -C &lt;path&gt;` and a leading `cd &lt;path&gt; &amp;&amp;`
+cwd="$(printf '%s' "$input" | jq -r '.cwd // empty')"; [ -z "$cwd" ] &amp;&amp; cwd="$PWD"
+dir="$cwd"
+if [[ "$cmd" =~ git[[:space:]]+-C[[:space:]]+([^[:space:]]+) ]]; then dir="${BASH_REMATCH[1]}"
+elif [[ "$cmd" =~ ^[[:space:]]*cd[[:space:]]+([^[:space:];&amp;|]+) ]]; then dir="${BASH_REMATCH[1]}"; fi
+dir="${dir/#\~/$HOME}"; [[ "$dir" = /* ]] || dir="$cwd/$dir"
+branch="$(git -C "$dir" rev-parse --abbrev-ref HEAD 2&gt;/dev/null || echo '')"
+
+# Normalise before matching (all rules below run on $flat / $norm, never on the raw command):
+#  flat: newlines -&gt; ';'  |  drop quoted message text after -m/--message/--grep/--title/--body/--notes
+#        (so a commit message that *mentions* --no-verify does not trip R0)  |  strip remaining quote chars
+#        (so "HEAD:main" matches like HEAD:main)
+#  norm: flat + collapse git global options (-C &lt;p&gt;, -c k=v, --no-pager, -P) so `git -C x push` == `git push`
+#        + drop refs/heads/ so HEAD:refs/heads/main == HEAD:main
+flat="$(printf '%s' "$cmd" | tr '\n' ';' \
+  | sed -E "s/(-[A-Za-z]*m|--message|--grep|--title|--body|--notes)(=|[[:space:]]+)(\"[^\"]*\"|'[^']*')//g; s/[\"']//g")"
+norm="$(printf '%s' "$flat" \
+  | sed -E 's/git([[:space:]]+(-C[[:space:]]+[^[:space:]]+|-c[[:space:]]+[^[:space:]]+|--no-pager|-P))+[[:space:]]+/git /g; s#refs/heads/##g')"
+has()  { printf '%s' "$norm" | grep -Eq "$1"; }
+hasf() { printf '%s' "$flat" | grep -Eq "$1"; }
+
+# R0  never dismantle the guard rails (checked on $flat: `git -c core.hooksPath=` must still be visible)
+if hasf '(^|[[:space:];])--no-verify([[:space:];|&amp;]|$)|-c[[:space:]]*core\.hooksPath|git[[:space:]]+config[^|;&amp;]*hooksPath|(^|[[:space:];])(ALLOW_PROTECTED_PUSH|GIT_DIR)=|--git-dir(=|[[:space:]])'; then
+  deny "bypassing hooks (--no-verify / core.hooksPath / ALLOW_PROTECTED_PUSH / GIT_DIR / --git-dir) is not allowed. Ask the human."
+fi
+# R1  plain force push anywhere; --force-with-lease only on non-protected branches
+if has 'git[[:space:]]+push[^|;&amp;]*([[:space:]](--force|-f)([[:space:]]|$)|[[:space:]]\+[^[:space:]])'; then
+  deny "plain force push is forbidden; --force-with-lease is allowed only on your own feat/fix/spike branch."
+fi
+if has 'git[[:space:]]+push[^|;&amp;]*--force-with-lease' &amp;&amp; { has "git[[:space:]]+push[^|;&amp;]*${L}${PROTECTED_NAMES}${R}" || [[ "$branch" =~ $PROTECTED_RE ]]; }; then
+  deny "force-with-lease to a protected branch is forbidden."
+fi
+# R2  deleting protected branches or v* tags on the remote (own feat/* branches may be deleted)
+if has 'git[[:space:]]+push[^|;&amp;]*([[:space:]](--delete|-d)([[:space:]]|$)|[[:space:]]:[^[:space:]])' \
+   &amp;&amp; has "git[[:space:]]+push[^|;&amp;]*(${L}${PROTECTED_NAMES}${R}|refs/tags/v[0-9]|[[:space:]:]v[0-9]+\.[0-9]+\.[0-9]+)"; then
+  deny "deleting protected branches or release tags is forbidden."
+fi
+# R3  explicit push to a protected ref from any branch (origin main / HEAD:main / HEAD:refs/heads/main / "HEAD:main")
+if has "git[[:space:]]+push[^|;&amp;]*${L}${PROTECTED_NAMES}${R}"; then
+  deny "direct push to main/release/* is forbidden; open a PR: gh pr create --base &lt;branch&gt;."
+fi
+# R4  tags are immutable; never push all tags
+if has 'git[[:space:]]+tag[^|;&amp;]*[[:space:]](-d|--delete|-f|--force)([[:space:]]|$)' || has 'git[[:space:]]+push[^|;&amp;]*[[:space:]](--tags|--follow-tags)([[:space:]]|$)'; then
+  deny "deleting/moving tags or 'git push --tags' is forbidden; push one tag: git push origin vX.Y.Z."
+fi
+# R5  no admin bypass of branch protection
+if has 'gh[[:space:]]+pr[[:space:]]+merge[^|;&amp;]*--admin'; then
+  deny "gh pr merge --admin bypasses branch protection; not allowed."
+fi
+# R6  protected branch checked out: read-only git, plus pushing version tags only
+if [[ "$branch" =~ $PROTECTED_RE ]]; then
+  if has 'git[[:space:]]+(commit|merge|rebase|cherry-pick|am|revert|apply|stash|reset[[:space:]]+--hard|switch|checkout[[:space:]]+-[bB])([[:space:]]|$)'; then
+    deny "'$branch' is protected. Use a worktree: /new-feature &lt;name&gt; (or git worktree add ... -b feat/&lt;name&gt; origin/main)."
+  fi
+  # every `git push` segment must push version tags only: git push origin vX.Y.Z [vX.Y.W ...]
+  bad="$(printf '%s' "$norm" | tr '|;&amp;' '\n\n\n' | grep -E 'git[[:space:]]+push' | while read -r seg; do
+      args="$(printf '%s' "$seg" | sed -E 's/.*git[[:space:]]+push//; s/(^|[[:space:]])-[^[:space:]]*//g')"
+      set -- $args; [ $# -ge 1 ] &amp;&amp; shift                       # first word is the remote
+      [ $# -eq 0 ] &amp;&amp; { echo '&lt;current branch&gt;'; continue; }
+      for r in "$@"; do [[ "$r" =~ $TAG_RE ]] || echo "$r"; done
+    done)"
+  [ -n "$bad" ] &amp;&amp; deny "'$branch' is protected: only 'git push origin vX.Y.Z' is allowed here (refused: $(printf '%s' "$bad" | tr '\n' ' '))."
+fi
+exit 0</code></pre></div></details>
+<details class="fold"><summary><span class="mono">.claude/hooks/guard-edit.sh</span><span class="fold-meta">13 行</span></summary><div class="code "><div class="code-bar"><span class="code-file">.claude/hooks/guard-edit.sh</span><button class="copy" type="button" aria-live="polite" aria-label="复制 .claude/hooks/guard-edit.sh">复制</button></div><pre><code>#!/usr/bin/env bash
+set -u
+input="$(cat)"
+f="$(printf '%s' "$input" | jq -r '.tool_input.file_path // .tool_input.notebook_path // empty')"
+[ -z "$f" ] &amp;&amp; exit 0
+d="$(dirname "$f")"
+while [ ! -d "$d" ] &amp;&amp; [ "$d" != "/" ]; do d="$(dirname "$d")"; done
+branch="$(git -C "$d" rev-parse --abbrev-ref HEAD 2&gt;/dev/null || echo '')"
+if [[ "$branch" =~ ^(main|master|release/[0-9]+\.[0-9]+)$ ]]; then
+  printf 'BLOCKED by .claude/hooks/guard-edit.sh: %s is on protected branch %s. Work in a feature worktree (see CLAUDE.md).\n' "$f" "$branch" &gt;&amp;2
+  exit 2
+fi
+exit 0</code></pre></div></details>
+<details class="fold"><summary><span class="mono">.claude/hooks/session-start.sh</span><span class="fold-meta">18 行</span></summary><div class="code "><div class="code-bar"><span class="code-file">.claude/hooks/session-start.sh</span><button class="copy" type="button" aria-live="polite" aria-label="复制 .claude/hooks/session-start.sh">复制</button></div><pre><code>#!/usr/bin/env bash
+set -u
+cwd="$(jq -r '.cwd // empty')"; [ -z "$cwd" ] &amp;&amp; cwd="$PWD"
+cd "$cwd" 2&gt;/dev/null || exit 0
+git rev-parse --is-inside-work-tree &gt;/dev/null 2&gt;&amp;1 || exit 0
+main="$(dirname "$(git rev-parse --path-format=absolute --git-common-dir)")"
+[ "$(git config core.hooksPath)" = "$main/.githooks" ] || git config core.hooksPath "$main/.githooks"
+b="$(git symbolic-ref --short -q HEAD || echo DETACHED)"
+if [ "$(git rev-parse --path-format=absolute --git-dir)" != "$(git rev-parse --path-format=absolute --git-common-dir)" ]; then
+  for f in .env .env.local CLAUDE.local.md; do
+    [ -f "$main/$f" ] &amp;&amp; [ ! -f "$f" ] &amp;&amp; cp "$main/$f" "$f" &amp;&amp; echo "bootstrap: copied $f from main checkout"
+  done
+  [ -f package.json ] &amp;&amp; [ ! -d node_modules ] &amp;&amp; echo "NOTE: node_modules missing; run: bash scripts/wt-setup.sh"
+fi
+echo "git context: branch=$b dir=$cwd main_checkout=$main"
+case "$b" in main|master|release/*) echo "WARNING: '$b' is protected. Do NOT edit/commit here. Run /new-feature &lt;name&gt; first.";; esac
+git worktree list | sed 's/^/worktree: /'
+exit 0</code></pre></div></details>
+<details class="fold"><summary><span class="mono">.githooks/pre-push</span><span class="fold-meta">人与 Claude 都生效 · 15 行</span></summary><div class="code "><div class="code-bar"><span class="code-file">.githooks/pre-push</span><button class="copy" type="button" aria-live="polite" aria-label="复制 .githooks/pre-push">复制</button></div><pre><code>#!/usr/bin/env bash
+# Emergency override (humans only): ALLOW_PROTECTED_PUSH=1 git push ...
+[ "${ALLOW_PROTECTED_PUSH:-0}" = "1" ] &amp;&amp; exit 0
+zero=0000000000000000000000000000000000000000; status=0
+while read -r local_ref local_sha remote_ref remote_sha; do
+  case "$remote_ref" in
+    refs/heads/main|refs/heads/master|refs/heads/release/*)
+      if [ "$local_sha" = "$zero" ]; then echo "pre-push: refusing to DELETE $remote_ref" &gt;&amp;2; status=1
+      elif [ "$remote_sha" != "$zero" ]; then echo "pre-push: refusing direct push to $remote_ref; open a PR (gh pr create)" &gt;&amp;2; status=1
+      fi ;;
+    refs/tags/v*)
+      [ "$local_sha" = "$zero" ] &amp;&amp; { echo "pre-push: refusing to delete release tag $remote_ref" &gt;&amp;2; status=1; } ;;
+  esac
+done
+exit $status</code></pre></div></details>
+<p>hook 自测一行命令，升级 Claude Code 后回归用。由人在终端执行，Claude 会话内执行会先被 R3 拦下，这本身也是一次验证：</p>
+<div class="code "><div class="code-bar"><span class="code-file">hook 自测（人在终端执行）</span><button class="copy" type="button" aria-live="polite" aria-label="复制 hook 自测（人在终端执行）">复制</button></div><pre><code>jq -cn --arg c 'git push origin HEAD:main' --arg d "$PWD" '{tool_name:"Bash",tool_input:{command:$c},cwd:$d}' | bash .claude/hooks/guard-git.sh; echo "exit=$?"   # 期望 exit=2</code></pre></div>
+
+<h3><span class="n">5.4</span>四个自定义 skill</h3>
+<p>放在 <code>.claude/skills/&lt;name&gt;/SKILL.md</code>，入库。release 与 hotfix 带 <code>disable-model-invocation: true</code>，模型无法替你执行；new-feature 与 spike 只建 worktree，允许 Claude 被 hook 拦下时自行调用。</p>
+<div class="skills">
+  <div class="skill"><div class="name">/new-feature <span class="who">模型可调用</span></div><dl><dt>何时</dt><dd>“开个分支做 X”，或在 main 上被 hook 拦下时</dd><dt>做什么</dt><dd>从 origin/main 切 feat/、fix/ 或 chore/ 分支，在 ../git-cc.wt/&lt;name&gt; 建 worktree，跑 wt-setup.sh，输出下一步命令</dd><dt>不做</dt><dd>在当前目录切分支、改源码、在新 worktree 里写代码</dd></dl></div>
+  <div class="skill"><div class="name">/spike <span class="who">模型可调用</span></div><dl><dt>何时</dt><dd>验证一个想法</dd><dt>做什么</dt><dd>在 .claude/worktrees/spike-&lt;idea&gt; 建 spike/&lt;idea&gt;，写 SPIKE.md 记录假设、成功标准与截止日期</dd><dt>结束</dt><dd>失败即删；成功写进 issue，用 /new-feature 干净重写</dd></dl></div>
+  <div class="skill"><div class="name">/release <span class="who human">仅人手动</span></div><dl><dt>何时</dt><dd>“出 rc”“把 rc 转正”“发布 X.Y.Z”</dd><dt>做什么</dt><dd>校验 tag 不存在、版本递增、CI 绿、工作区干净；promote 模式在 rc 的同一 commit 打正式 tag；只推这一个 tag，创建 GitHub Release</dd><dt>不做</dt><dd>移动或删除 tag、在 main 上 commit、任何 --force</dd></dl></div>
+  <div class="skill"><div class="name">/hotfix <span class="who human">仅人手动</span></div><dl><dt>何时</dt><dd>“线上 1.4 有 bug”</dd><dt>做什么</dt><dd>必要时通过 API 从正式 tag 创建 release/X.Y，建 hotfix worktree；默认 fix-forward，先在 main 修好再 cherry-pick -x</dd><dt>收尾</dt><dd>列出其他仍支持的 release 线提醒传播，提示 /release X.Y.Z --from</dd></dl></div>
+</div>
+<details class="fold"><summary><span class="mono">.claude/skills/new-feature/SKILL.md</span><span class="fold-meta">12 行</span></summary><div class="code "><div class="code-bar"><span class="code-file">.claude/skills/new-feature/SKILL.md</span><button class="copy" type="button" aria-live="polite" aria-label="复制 .claude/skills/new-feature/SKILL.md">复制</button></div><pre><code>---
+name: new-feature
+description: 从最新 origin/main 开 feat/&lt;name&gt;（或 fix/、chore/）分支并创建独立 worktree。用户说"开个分支做 X"、或当前在 main/release/* 上被 hook 拦下需要 worktree 时使用。
+argument-hint: &lt;name&gt; [--fix|--chore]
+---
+参数：$ARGUMENTS（第一个词是名字；含 --fix 用 fix/，含 --chore 用 chore/，默认 feat/）。
+1. 名字规范化为 kebab-case（[a-z0-9-]，≤ 40 字符）；`git fetch origin --prune`。
+2. `git show-ref --verify --quiet refs/heads/&lt;prefix&gt;/&lt;name&gt;` 成功或目录已存在 → 停止并告知。
+3. `root=$(git rev-parse --show-toplevel); git worktree add "$(dirname "$root")/$(basename "$root").wt/&lt;name&gt;" -b &lt;prefix&gt;/&lt;name&gt; origin/main`
+4. 在新目录执行 `bash scripts/wt-setup.sh`（用 `cd &lt;path&gt; &amp;&amp; bash scripts/wt-setup.sh`，这是 CLAUDE.md 允许的唯一跨 worktree 例外；脚本不存在则提示）。
+5. 只输出三行：分支名；worktree 绝对路径；`cd &lt;path&gt; &amp;&amp; claude -n &lt;prefix&gt;-&lt;name&gt;`。
+禁止：在当前目录切分支；修改源码；在新 worktree 里开始写代码（那是新会话的事）。</code></pre></div></details>
+<details class="fold"><summary><span class="mono">.claude/skills/release/SKILL.md</span><span class="fold-meta">20 行</span></summary><div class="code "><div class="code-bar"><span class="code-file">.claude/skills/release/SKILL.md</span><button class="copy" type="button" aria-live="polite" aria-label="复制 .claude/skills/release/SKILL.md">复制</button></div><pre><code>---
+name: release
+description: 从 main（或 release/X.Y）打 rc / 正式 tag 并创建 GitHub Release。用户说"出 rc""把 rc 转正""发布 X.Y.Z"时使用。
+argument-hint: &lt;X.Y.Z-rc.N | promote X.Y.Z-rc.N | X.Y.Z&gt; [--from release/X.Y]
+disable-model-invocation: true
+---
+参数：$ARGUMENTS。先执行 `git fetch origin --tags --prune` 与 `git tag --list 'v*' --sort=-v:refname | head -10`。
+模式：`X.Y.Z-rc.N` 在源分支 HEAD（默认 origin/main；--from 则 origin/release/X.Y）打 rc；`promote X.Y.Z-rc.N` 在
+`git rev-parse "vX.Y.Z-rc.N^{commit}"` 的**同一 commit** 打 vX.Y.Z（不允许换 commit）；`X.Y.Z` 直接打正式 tag，仅当用户明确不要 rc。
+前置校验（任一失败即停止并说明）：
+- 目标 tag 不存在；版本大于同线上一个 tag；--from 维护线只允许 PATCH；工作区干净。
+- 源 commit CI 绿：`gh run list --commit &lt;sha&gt; --workflow ci --limit 1 --json conclusion`。
+- MAJOR 递增 → 先提示用户从上一大版本最后正式 tag 建维护线（/hotfix 会创建），确认后再继续。
+- --from 维护线：`git log --cherry-pick --right-only --no-merges --oneline origin/main...origin/release/X.Y` 非空则列出并提醒
+  这些修复尚未前移到 main（提交信息含 `Forward-ported:` 的可忽略），由用户决定是否继续。
+- 用 `git log --pretty='- %s (%h)' &lt;上一正式tag&gt;..&lt;commit&gt;` 生成草稿；出现 `!`/BREAKING 但没升 MAJOR，或有 feat 却只升 PATCH → 指出。
+执行：`git tag -a v&lt;ver&gt; &lt;commit&gt; -m "v&lt;ver&gt;"` → `git push origin v&lt;ver&gt;`（只推这一个 tag）→
+rc：`gh release create v&lt;ver&gt; --verify-tag --prerelease --generate-notes --title "v&lt;ver&gt;"`；
+正式：`gh release create v&lt;ver&gt; --verify-tag --generate-notes --title "v&lt;ver&gt;" --notes-start-tag &lt;上一正式tag&gt;`（--from 时加 `--latest=false`）。
+输出 tag、commit、Release URL、`gh run list --workflow deploy --limit 3`。禁止：移动/删除 tag；在 main 上 commit；任何 --force。</code></pre></div></details>
+<details class="fold"><summary><span class="mono">.claude/skills/hotfix/SKILL.md</span><span class="fold-meta">17 行</span></summary><div class="code "><div class="code-bar"><span class="code-file">.claude/skills/hotfix/SKILL.md</span><button class="copy" type="button" aria-live="polite" aria-label="复制 .claude/skills/hotfix/SKILL.md">复制</button></div><pre><code>---
+name: hotfix
+description: 为已发布版本线 X.Y 开热修：必要时从正式 tag 创建 release/X.Y，建 hotfix worktree，按 fix-forward cherry-pick。用户说"线上 1.4 有 bug"时使用。
+argument-hint: &lt;X.Y&gt; &lt;desc&gt; [--pick &lt;sha-on-main&gt;]
+disable-model-invocation: true
+---
+参数：$ARGUMENTS。先 `git fetch origin --tags --prune` 与 `git ls-remote --heads origin 'release/*'`。
+1. 基线 = 该线最新**正式** tag vX.Y.P（忽略 rc）。远端无 release/X.Y 时通过 API 创建（不经本地 push，不触发护栏；会弹权限确认）：
+   `gh api -X POST repos/{owner}/{repo}/git/refs -f ref=refs/heads/release/X.Y -f sha=$(git rev-parse "vX.Y.P^{commit}")`，然后 `git fetch origin`。
+2. `root=$(git rev-parse --show-toplevel); git worktree add "$(dirname "$root")/$(basename "$root").wt/hotfix-X.Y.(P+1)" -b hotfix/X.Y.(P+1)-&lt;desc&gt; origin/release/X.Y`，
+   `cd` 进去执行 `bash scripts/wt-setup.sh`（CLAUDE.md 允许的例外），并写一份不入库的 CLAUDE.local.md："本线只修 bug；修完必须 cherry-pick -x 到 main 及其他仍支持的 release/*"。
+3. 修复策略（说明选了哪种）：默认 fix-forward——bug 在 main 也存在 → 先调用 /new-feature &lt;desc&gt; --fix 建好 fix worktree，然后**停下**，
+   请用户在那个 worktree 里新开会话修好并走 PR squash 合入 main；用户给出 squash sha 后，再回到 hotfix 分支 `git cherry-pick -x &lt;squash-sha&gt;`。
+   仅旧版本才有的 bug → 直接在 hotfix 分支修，事后前移到 main 时提交信息加 `Forward-ported: &lt;sha&gt;`。给了 --pick &lt;sha&gt; 就直接 cherry-pick -x。
+4. 在 hotfix worktree 跑测试、/code-review，`gh pr create --base release/X.Y --fill --label hotfix`。
+5. 传播清单：列出所有其他仍支持的 origin/release/*，提醒逐条 cherry-pick -x；合入后提示 `/release X.Y.(P+1) --from release/X.Y`。
+禁止：在 release/X.Y 上直接 commit / cherry-pick / push。</code></pre></div></details>
+<details class="fold"><summary><span class="mono">.claude/skills/spike/SKILL.md</span><span class="fold-meta">9 行</span></summary><div class="code "><div class="code-bar"><span class="code-file">.claude/skills/spike/SKILL.md</span><button class="copy" type="button" aria-live="polite" aria-label="复制 .claude/skills/spike/SKILL.md">复制</button></div><pre><code>---
+name: spike
+description: 开一次性实验 worktree（spike/&lt;idea&gt;）验证想法：记录假设、成功标准、截止日期；永不合并。
+argument-hint: &lt;idea&gt; "&lt;一句话假设&gt;"
+---
+参数：$ARGUMENTS。1. `git fetch origin &amp;&amp; git worktree add .claude/worktrees/spike-&lt;idea&gt; -b spike/&lt;idea&gt; origin/main`
+2. 在该目录写 SPIKE.md：假设、成功标准、截止日期（默认 2 天）、结论（留空）。
+3. 告诉用户：`cd .claude/worktrees/spike-&lt;idea&gt; &amp;&amp; claude -n spike-&lt;idea&gt;`；代码可以脏；禁止 gh pr create（CI 也会拒）。
+4. 结束二选一：失败 → `git worktree remove --force .claude/worktrees/spike-&lt;idea&gt; &amp;&amp; git branch -D spike/&lt;idea&gt;`；成功 → 结论写进 issue，`/new-feature &lt;idea&gt;` 干净实现。</code></pre></div></details>
+
+<h3><span class="n">5.5</span>合并前清单</h3>
+<div class="chain">
+  <span class="step">写代码</span><span class="ar">›</span>
+  <span class="step"><span class="mono">rebase origin/main</span></span><span class="ar">›</span>
+  <span class="step">测试</span><span class="ar">›</span>
+  <span class="step hi"><span class="mono">/code-review</span></span><span class="ar">›</span>
+  <span class="step hi"><span class="mono">/security-review</span>（敏感改动）</span><span class="ar">›</span>
+  <span class="step"><span class="mono">gh pr create --label</span></span><span class="ar">›</span>
+  <span class="step">CI</span><span class="ar">›</span>
+  <span class="step hi">主检出会话 <span class="mono">/code-review &lt;PR#&gt; --comment</span></span><span class="ar">›</span>
+  <span class="step end"><span class="mono">gh pr merge --squash --delete-branch</span></span>
+</div>
+<ul class="tight">
+<li><code>/code-review</code> 在功能 worktree 里审当前 diff，<code>--fix</code> 直接应用修复；PR 打开后在主检出会话对 PR 号做第二双眼评审；超大改动用 <code>/code-review ultra</code>。</li>
+<li><code>/security-review</code> 在涉及认证、权限、输入处理、依赖升级、外部调用、文件或命令执行时必跑。</li>
+<li>ruleset 的 <code>required_review_thread_resolution</code> 本方案设为 false，单人仓库下评审线程不会卡住合并。</li>
+</ul>
+</section>
+
+<section id="s6">
+<h2><span class="n">§6</span>从零初始化</h2>
+<p>整段由人在终端执行，zsh 或 bash 都可。附录文件写入对应路径后再运行提交那一行。远端建议 public：Free 套餐私有仓库对 ruleset 与 Environments 都不可用。</p>
+<div class="code "><div class="code-bar"><span class="code-file">初始化命令（人在终端执行）</span><button class="copy" type="button" aria-live="polite" aria-label="复制 初始化命令（人在终端执行）">复制</button></div><pre><code>cd ~/workspace/git-cc &amp;&amp; gh auth status
+git init -b main &amp;&amp; git config pull.ff only
+cat &gt; .gitignore &lt;&lt;'EOF'
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+.claude/settings.local.json
+.claude/worktrees/
+CLAUDE.local.md
+.DS_Store
+EOF
+printf '.env\n.env.local\nCLAUDE.local.md\n' &gt; .worktreeinclude; cp /dev/null .env.example
+mkdir -p .claude/hooks .claude/skills/{new-feature,release,hotfix,spike} .githooks .github/{workflows,rulesets} scripts
+#  -&gt; 写入 CLAUDE.md、.claude/settings.json、.claude/hooks/*.sh、.githooks/pre-push、.claude/skills/*/SKILL.md、
+#     scripts/wt-setup.sh、.github/workflows/{ci,deploy}.yml、.github/release.yml、.github/rulesets/*.json（附录）
+chmod +x .claude/hooks/*.sh .githooks/pre-push scripts/wt-setup.sh
+git config core.hooksPath "$PWD/.githooks"
+git add -A &amp;&amp; git commit -m "chore: bootstrap repository with trunk-based workflow"   # 唯一一次直接提交 main
+git tag -a v0.1.0 -m "v0.1.0: bootstrap"
+
+# 远端：public 才有 ruleset 与 Environments（Free 套餐私有仓库对 ruleset/branch protection API 返回 403，评委实测；
+#       Environments/required reviewers 同样仅 public 仓库可配）；私有则只剩 hook + pre-push，见 §8
+gh repo create git-cc --public --source=. --remote=origin --push          # 首次推 main 是"创建"，pre-push 放行
+git remote set-head origin -a       # 让 origin/HEAD 存在（建议而非硬依赖：缺失时 claude --worktree 会按 origin/main → origin/master 猜）
+git push origin v0.1.0 &amp;&amp; gh release create v0.1.0 --verify-tag --title "v0.1.0" --notes "Bootstrap."
+gh repo edit --default-branch main --enable-squash-merge --enable-merge-commit=false --enable-rebase-merge=false \
+  --delete-branch-on-merge --allow-update-branch --enable-auto-merge --squash-merge-commit-message pr-title-description
+while read -r n c; do gh label create "$n" --color "$c" --force; done &lt;&lt;'EOF'   # 用 read 分词，zsh 下 `set -- $l` 不会拆开
+feat 0E8A16
+fix D73A4A
+hotfix B60205
+breaking 000000
+chore CFD3D7
+skip-changelog EEEEEE
+EOF
+for f in main release tags; do gh api -X POST repos/{owner}/{repo}/rulesets --input .github/rulesets/$f.json; done
+gh ruleset list &amp;&amp; gh ruleset check main     # ruleset 引用的 ci / promotion-guard 两个 check 在第一个 PR 跑过后才会出现在 GitHub 上，属正常
+
+# 验证护栏
+claude                       # 接受信任对话框；会话里 /hooks 应列出 3 个 hook；让它 `git commit` 应被拦
+# 下面两条由人在终端执行（Claude 会话内执行会被 guard-git 自己拦下：R6 看到 `git commit`、pre-push 一行看到 `HEAD:main`）
+jq -cn --arg c 'git commit -m x' --arg d "$PWD" '{tool_name:"Bash",tool_input:{command:$c},cwd:$d}' | bash .claude/hooks/guard-git.sh; echo "exit=$?"   # 期望 exit=2
+git push --dry-run origin HEAD:main   # 应被 pre-push 拒绝（--dry-run 同样触发 pre-push）
+mkdir -p ../git-cc.wt &amp;&amp; git worktree add ../git-cc.wt/hello -b feat/hello origin/main &amp;&amp; cd ../git-cc.wt/hello &amp;&amp; bash scripts/wt-setup.sh &amp;&amp; claude</code></pre></div>
+<p class="note">ruleset 引用的 ci 与 promotion-guard 两个 check 要等第一个 PR 跑过后才会出现在 GitHub 上，属正常。ci.yml 对空仓库做了无 lockfile 占位，否则第一个 PR 会因必需 check 永远红而合不进去。</p>
+<p class="note">生产审批门要手动配：仓库 Settings 里 Environments 给 production 加 required reviewers，deploy.yml 的 <code>environment: production</code> 本身不会创建任何保护规则。Environments 仅 public 仓库或 Pro/Team 可配。</p>
+<h3>附录文件</h3>
+<details class="fold"><summary><span class="mono">.github/rulesets/main.json</span><span class="fold-meta">release.json：name 改 protect-release，include 改 refs/heads/release/* · 8 行</span></summary><div class="code "><div class="code-bar"><span class="code-file">.github/rulesets/main.json</span><button class="copy" type="button" aria-live="polite" aria-label="复制 .github/rulesets/main.json">复制</button></div><pre><code>{ "name": "protect-main", "target": "branch", "enforcement": "active", "bypass_actors": [],
+  "conditions": { "ref_name": { "include": ["~DEFAULT_BRANCH"], "exclude": [] } },
+  "rules": [ { "type": "deletion" }, { "type": "non_fast_forward" }, { "type": "required_linear_history" },
+    { "type": "pull_request", "parameters": { "required_approving_review_count": 0, "dismiss_stale_reviews_on_push": true,
+        "require_code_owner_review": false, "require_last_push_approval": false, "required_review_thread_resolution": false,
+        "allowed_merge_methods": ["squash"] } },
+    { "type": "required_status_checks", "parameters": { "strict_required_status_checks_policy": true,
+        "required_status_checks": [ { "context": "ci" }, { "context": "promotion-guard" } ] } } ] }</code></pre></div></details>
+<details class="fold"><summary><span class="mono">.github/rulesets/tags.json</span><span class="fold-meta">3 行</span></summary><div class="code "><div class="code-bar"><span class="code-file">.github/rulesets/tags.json</span><button class="copy" type="button" aria-live="polite" aria-label="复制 .github/rulesets/tags.json">复制</button></div><pre><code>{ "name": "protect-version-tags", "target": "tag", "enforcement": "active", "bypass_actors": [],
+  "conditions": { "ref_name": { "include": ["refs/tags/v*"], "exclude": [] } },
+  "rules": [ { "type": "deletion" }, { "type": "non_fast_forward" }, { "type": "update" } ] }</code></pre></div></details>
+<details class="fold"><summary><span class="mono">.github/workflows/ci.yml</span><span class="fold-meta">job 名须与 ruleset context 一致 · 31 行</span></summary><div class="code "><div class="code-bar"><span class="code-file">.github/workflows/ci.yml</span><button class="copy" type="button" aria-live="polite" aria-label="复制 .github/workflows/ci.yml">复制</button></div><pre><code>name: ci
+on:
+  pull_request:
+  push:
+    branches: [main, 'release/**']
+jobs:
+  ci:
+    name: ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - if: hashFiles('package-lock.json') != ''
+        uses: actions/setup-node@v4
+        with: { node-version: 22, cache: npm }
+      - if: hashFiles('package-lock.json') != ''
+        run: npm ci &amp;&amp; npm run lint --if-present &amp;&amp; npm test &amp;&amp; npm run build --if-present   # 按技术栈改
+      - if: hashFiles('package-lock.json') == ''
+        run: echo "no package-lock.json yet; ci is a no-op until the stack lands"
+  promotion-guard:
+    name: promotion-guard
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - env: { BASE: "${{ github.base_ref }}", HEAD: "${{ github.head_ref }}" }
+        run: |
+          case "$HEAD" in spike/*|worktree-*) echo "spike/* and worktree-* are never merged; re-implement on feat/*"; exit 1;; esac
+          case "$BASE" in
+            release/*) [[ "$HEAD" == hotfix/* ]] || { echo "release/* only accepts hotfix/* (got $HEAD)"; exit 1; } ;;
+            main) [[ "$HEAD" =~ ^(feat|fix|chore|docs|refactor|test|perf|ci|build|revert)/ ]] || { echo "bad head branch name: $HEAD"; exit 1; } ;;
+          esac</code></pre></div></details>
+<details class="fold"><summary><span class="mono">.github/workflows/deploy.yml</span><span class="fold-meta">staging 只认 rc tag · production 需手动配 required reviewers · 17 行</span></summary><div class="code "><div class="code-bar"><span class="code-file">.github/workflows/deploy.yml</span><button class="copy" type="button" aria-live="polite" aria-label="复制 .github/workflows/deploy.yml">复制</button></div><pre><code>name: deploy
+on: { push: { branches: [main], tags: ['v*'] } }
+jobs:
+  dev:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps: [ { run: "echo deploy dev from ${{ github.sha }}   # 可选，没有 dev 环境就删掉这个 job" } ]
+  staging:
+    if: startsWith(github.ref, 'refs/tags/v') &amp;&amp; contains(github.ref_name, '-rc.')
+    runs-on: ubuntu-latest
+    environment: staging
+    steps: [ { run: "echo deploy staging from ${{ github.ref_name }}" } ]
+  production:
+    if: startsWith(github.ref, 'refs/tags/v') &amp;&amp; !contains(github.ref_name, '-rc.')
+    runs-on: ubuntu-latest
+    environment: production
+    steps: [ { run: "echo deploy production from ${{ github.ref_name }}   # 替换为真实部署命令" } ]</code></pre></div></details>
+<details class="fold"><summary><span class="mono">.github/release.yml</span><span class="fold-meta">7 行</span></summary><div class="code "><div class="code-bar"><span class="code-file">.github/release.yml</span><button class="copy" type="button" aria-live="polite" aria-label="复制 .github/release.yml">复制</button></div><pre><code>changelog:
+  exclude: { labels: [skip-changelog] }
+  categories:
+    - { title: Breaking Changes, labels: [breaking] }
+    - { title: Features, labels: [feat] }
+    - { title: Fixes, labels: [fix, hotfix] }
+    - { title: Other, labels: ["*"] }</code></pre></div></details>
+</section>
+
+<section id="s7">
+<h2><span class="n">§7</span>日常流程速查</h2>
+<div class="tabs" role="tablist" aria-label="日常流程">
+  <button class="tab" role="tab" id="tab-feat" aria-controls="p-feat" aria-selected="true" type="button">功能</button>
+  <button class="tab" role="tab" id="tab-spike" aria-controls="p-spike" aria-selected="false" type="button">实验</button>
+  <button class="tab" role="tab" id="tab-rel" aria-controls="p-rel" aria-selected="false" type="button">发布</button>
+  <button class="tab" role="tab" id="tab-hot" aria-controls="p-hot" aria-selected="false" type="button">热修</button>
+  <button class="tab" role="tab" id="tab-maint" aria-controls="p-maint" aria-selected="false" type="button">维护旧版本</button>
+</div>
+<div class="panel" id="p-feat" role="tabpanel" aria-labelledby="tab-feat">
+<p class="ctx">主检出会话开分支，新终端里开发。</p>
+<div class="code "><div class="code-bar"><span class="code-file">功能</span><button class="copy" type="button" aria-live="polite" aria-label="复制 功能">复制</button></div><pre><code>/new-feature checkout-coupon                      # 主检出会话；得到 ../git-cc.wt/checkout-coupon
+cd ~/workspace/git-cc.wt/checkout-coupon &amp;&amp; claude -n feat-checkout-coupon
+git fetch origin &amp;&amp; git rebase origin/main &amp;&amp; npm test
+/code-review                                      # 涉及支付/认证再 /security-review
+gh pr create --base main --fill --label feat &amp;&amp; gh pr checks --watch
+gh pr merge --squash --delete-branch              # 或 --auto 让 GitHub 排队；多 PR 排队用 gh pr update-branch &lt;n&gt;
+cd ~/workspace/git-cc &amp;&amp; git pull --ff-only &amp;&amp; git worktree remove ../git-cc.wt/checkout-coupon &amp;&amp; git branch -D feat/checkout-coupon</code></pre></div>
+</div>
+<div class="panel" id="p-spike" role="tabpanel" aria-labelledby="tab-spike" hidden>
+<p class="ctx">一条命令进实验；成功了就干净重写，失败就删。</p>
+<div class="code "><div class="code-bar"><span class="code-file">实验</span><button class="copy" type="button" aria-live="polite" aria-label="复制 实验">复制</button></div><pre><code>cd ~/workspace/git-cc &amp;&amp; claude --worktree try-redis      # 或 /spike try-redis "缓存命中率能到 90%"
+git diff origin/main --stat                               # 看看改了什么，作为重写参考
+git worktree unlock .claude/worktrees/try-redis 2&gt;/dev/null; git worktree remove --force .claude/worktrees/try-redis; git branch -D worktree-try-redis
+/new-feature redis-cache                                  # 成功了就干净重写</code></pre></div>
+</div>
+<div class="panel" id="p-rel" role="tabpanel" aria-labelledby="tab-rel" hidden>
+<p class="ctx">主检出会话，git pull --ff-only 之后。</p>
+<div class="code "><div class="code-bar"><span class="code-file">发布</span><button class="copy" type="button" aria-live="polite" aria-label="复制 发布">复制</button></div><pre><code>/release 1.5.0-rc.1                       # tag + prerelease → deploy(staging)；QA 在 staging 验证
+/release 1.5.0-rc.2                       # 发现问题：fix/* PR 合入 main 后再打一个 rc
+/release promote 1.5.0-rc.2               # 同一 commit 打 v1.5.0 → deploy(production)，环境审批后上线
+gh release view v1.5.0 &amp;&amp; gh run list --workflow deploy --limit 3</code></pre></div>
+</div>
+<div class="panel" id="p-hot" role="tabpanel" aria-labelledby="tab-hot" hidden>
+<p class="ctx">线上 1.4.x 报 bug，main 已是 1.5。修复方向 fix-forward。</p>
+<div class="flow">
+  <div class="st"><span class="num">STEP 1</span><b>开热修线</b><span class="mono">/hotfix 1.4 null-price</span><br>无 release/1.4 则从 v1.4.2 创建；建 hotfix worktree</div>
+  <div class="st"><span class="num">STEP 2</span><b>先修 main</b><span class="mono">/new-feature null-price --fix</span><br>新会话修好，PR squash 合入，拿到 sha</div>
+  <div class="st"><span class="num">STEP 3</span><b>回移</b><span class="mono">git cherry-pick -x &lt;sha&gt;</span><br>在 hotfix worktree，测试，/code-review</div>
+  <div class="st"><span class="num">STEP 4</span><b>合入维护线</b><span class="mono">gh pr create --base release/1.4</span><br>label hotfix，CI 绿后 squash</div>
+  <div class="st"><span class="num">STEP 5</span><b>发 1.4.3</b><span class="mono">/release 1.4.3 --from release/1.4</span><br>Release 带 --latest=false</div>
+</div>
+<div class="code "><div class="code-bar"><span class="code-file">热修</span><button class="copy" type="button" aria-live="polite" aria-label="复制 热修">复制</button></div><pre><code>/hotfix 1.4 null-price                    # 无 release/1.4 则从 v1.4.2 创建；worktree ../git-cc.wt/hotfix-1.4.3
+/new-feature null-price --fix             # fix-forward：先在 main 修好 → PR → squash 合入 → 拿到 sha（/hotfix 第 3 步会替你调用并停下等这一步）
+cd ~/workspace/git-cc.wt/hotfix-1.4.3 &amp;&amp; claude -n hotfix-1.4.3
+git cherry-pick -x &lt;sha&gt; &amp;&amp; npm test      # /code-review
+gh pr create --base release/1.4 --fill --label hotfix &amp;&amp; gh pr checks --watch &amp;&amp; gh pr merge --squash --delete-branch
+/release 1.4.3 --from release/1.4         # v1.4.3 → production（1.4 线），Release 带 --latest=false</code></pre></div>
+</div>
+<div class="panel" id="p-maint" role="tabpanel" aria-labelledby="tab-maint" hidden>
+<p class="ctx">人在终端执行，或在对应 worktree 自己的会话里做；不要让主检出会话 cd 过去。release/X.Y 不能 rebase，护栏更新走 hotfix PR 同步。</p>
+<div class="code "><div class="code-bar"><span class="code-file">维护旧版本</span><button class="copy" type="button" aria-live="polite" aria-label="复制 维护旧版本">复制</button></div><pre><code>git worktree add ../git-cc.wt/release-1.4 release/1.4     # 常驻 worktree，只看代码/打 tag，不在这里 commit
+printf '# 1.4 维护线\n- 只修 bug；修完必须 cherry-pick -x 到 main。\n' &gt; ../git-cc.wt/release-1.4/CLAUDE.local.md
+git log --cherry-pick --right-only --no-merges --oneline origin/main...origin/release/1.4   # 未前移的修复
+# 同步护栏到旧线：hotfix 分支 + PR（promotion-guard 只放行 hotfix/* 进 release/*）
+git worktree add ../git-cc.wt/sync-guard-1.4 -b hotfix/1.4.4-sync-guardrails origin/release/1.4
+cd ../git-cc.wt/sync-guard-1.4 &amp;&amp; git checkout origin/main -- CLAUDE.md .claude/ .githooks/ scripts/ \
+  &amp;&amp; git commit -m 'chore: sync guardrails from main' &amp;&amp; gh pr create --base release/1.4 --fill --label chore
+gh pr checks --watch &amp;&amp; gh pr merge --squash --delete-branch &amp;&amp; cd ~/workspace/git-cc
+/release 1.4.4 --from release/1.4         # 主检出会话；等价于 gh release create v1.4.4 --verify-tag --generate-notes --latest=false --notes-start-tag v1.4.3</code></pre></div>
+</div>
+</section>
+
+<section id="s8">
+<h2><span class="n">§8</span>注意事项与坑</h2>
+<dl class="pit">
+<div><dt>worktree 与 node_modules、.env、构建产物</dt><dd>都是 gitignored，新 worktree 里一律没有。手工 worktree 跑 wt-setup.sh，claude --worktree 靠 .worktreeinclude，SessionStart 再兜底复制 .env。不要 symlink node_modules；dist/、.next/ 各自独立；端口按路径 hash 分配。</dd></div>
+<div><dt>每个 worktree 单独安装依赖</dt><dd>SessionStart 不自动 npm ci（大依赖树会撞 hook 超时并留下半装的 node_modules），只提示；由 wt-setup.sh 显式安装。</dd></div>
+<div><dt>CLAUDE.md、settings、hooks、skills 随分支走</dt><dd>每个 worktree 看到的是自己分支上的版本。规则改动单独开小 PR 优先合入 main，feat 分支 rebase 即可拿到；release/X.Y 不能 rebase，用 hotfix PR 同步。分支特有规则放不入库的 CLAUDE.local.md。</dd></div>
+<div><dt>settings.local.json 跨 worktree 共享</dt><dd>settings.json 从当前 worktree 自己的检出读取（检出里没有 hooks 时 hook 不触发）；settings.local.json 统一位于主检出根目录，任意 worktree 里选“don't ask again”都写到那里并对所有 worktree 生效，删除 worktree 也不会丢。护栏与 worktree.baseRef 仍必须放入库的 settings.json。</dd></div>
+<div><dt>同一分支不能开两个 worktree</dt><dd>主检出独占 main；合并靠 gh pr merge 在远端完成再 git pull --ff-only。手动 rm -rf 了目录要 git worktree prune。</dd></div>
+<div><dt>hooks 在 worktree 中的生效条件</dt><dd>worktree 是完整检出，hooks 与 settings 从该 worktree 的 .claude/ 读取；脚本要 chmod +x；不要用 --bare 开发。core.hooksPath 必须是绝对路径，相对路径会按各 worktree 自己的检出解析，旧分支没有 .githooks/ 时 pre-push 会静默失效。</dd></div>
+<div><dt>claude --worktree 细节</dt><dd>分支固定叫 worktree-&lt;name&gt;，所以只用于 spike；要转正就 git branch -m。退出时：工作区干净且会话未命名自动删除；命名会话或有改动会询问。claude -p --worktree 不做清理并保留锁，手动清理前先 git worktree unlock。baseRef=fresh 的基线解析顺序是 origin/HEAD、origin/main、origin/master，建议初始化时 git remote set-head origin -a。</dd></div>
+<div><dt>git 语义</dt><dd>stash、refs、tags、config 全仓库共享，HEAD、index、工作区每 worktree 独立。CLAUDE.md 已禁 stash，用 WIP commit 代替，squash 后无痕。squash 合并后本地分支 git branch -d 会拒绝，用 -D。</dd></div>
+<div><dt>GitHub 套餐</dt><dd>Free 私有仓库无 ruleset（实测 403），required_status_checks 与 allowed_merge_methods 全部落空；也不能配置 Environments，deploy.yml 里 production 的审批门会静默失效，/release promote 会直接触发 prod job。要么 public，要么 Pro/Team，要么把 prod job 改成 workflow_dispatch 手动触发。bypass_actors 为空意味着管理员也必须走 PR，紧急时临时把 ruleset enforcement 设为 disabled，事后改回。</dd></div>
+<div><dt>权限 deny 的副作用</dt><dd>Read(/.env) 被拒后 Claude 无法诊断 .env 相关问题，需要人贴出相关行；gh api 与 gh release 在 ask 列表里，/hotfix 与 /release 会弹确认，这是刻意的。</dd></div>
+<div><dt>护栏是护栏不是安全边界</dt><dd>guard-git 已覆盖 git -C、refs/heads/、引号包裹的 refspec、bash -c 内的 git。已知绕过：变量拼接（r=main; git push origin HEAD:$r）、先写进脚本文件再执行、-m 消息文本里的内容不检查。真正的强制是 pre-push 与 ruleset。</dd></div>
+</dl>
+</section>
+
+<section id="s9">
+<h2><span class="n">§9</span>可选进阶</h2>
+<ul class="tight">
+<li><strong>CI 自动化</strong>：<code>gh pr merge --auto --squash</code> 配合 allow-update-branch 让多 PR 自动排队；每日定时 workflow 报告未前移的 release 修复；git-cliff 生成 CHANGELOG.md 文件。</li>
+<li><strong>feature flag</strong>：仅当一个改动确实无法拆成 2 天内的 PR 时使用；<code>FLAG_&lt;NAME&gt;</code> 默认关闭，staging 通过环境变量打开验证，建 issue 跟踪删除。</li>
+<li><strong>preview 环境</strong>：在 ci.yml 里给每个 PR 部署临时 URL，QA 可在合并前验证；配合 statusline 显示 worktree 与分支，多终端并行时一眼看出当前会话在哪条分支。</li>
+<li><strong>子代理隔离</strong>：自定义子代理 frontmatter 加 <code>isolation: worktree</code>，让 Claude 派出的子代理在临时 worktree 里跑测试或重构，不污染当前分支。</li>
+</ul>
+</section>
+
+<footer>
+来源文件 .claude/specs/2026-09-14-version-management-plan.md · 2026-09-14<br>
+hook 与 pre-push 脚本已在本机临时仓库实测（guard-git 141 条 git/gh 用例加 worktree 场景，bash 3.2）；文中 Claude Code 与 GitHub 行为均按官方文档或本机 2.1.270 实测确认。方案由三套候选经评审综合，再经对抗校验修订。
+</footer>
+</main>
+</div>
+
+<script>
+(function(){
+  // copy buttons
+  document.querySelectorAll('.copy').forEach(function(btn){
+    btn.addEventListener('click', function(){
+      var pre = btn.closest('.code').querySelector('pre');
+      var text = pre.textContent;
+      function done(ok){ btn.textContent = ok ? '已复制' : '请手动选择'; btn.classList.toggle('done', ok); setTimeout(function(){ btn.textContent='复制'; btn.classList.remove('done'); }, 1600); }
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text).then(function(){ done(true); }, function(){ fallback(); });
+      } else { fallback(); }
+      function fallback(){
+        try { var r = document.createRange(); r.selectNodeContents(pre); var s = window.getSelection(); s.removeAllRanges(); s.addRange(r); var ok = document.execCommand && document.execCommand('copy'); s.removeAllRanges(); done(!!ok); } catch(e){ done(false); }
+      }
+    });
+  });
+  // tabs
+  var tabs = Array.prototype.slice.call(document.querySelectorAll('.tab'));
+  function select(tab){
+    tabs.forEach(function(t){
+      var on = t === tab; t.setAttribute('aria-selected', on ? 'true' : 'false'); t.tabIndex = on ? 0 : -1;
+      var p = document.getElementById(t.getAttribute('aria-controls')); if (p) p.hidden = !on;
+    });
+  }
+  if (tabs.length) select(tabs[0]);
+  tabs.forEach(function(t, i){
+    t.addEventListener('click', function(){ select(t); });
+    t.addEventListener('keydown', function(e){
+      var j = e.key === 'ArrowRight' ? i+1 : e.key === 'ArrowLeft' ? i-1 : -1;
+      if (j < 0 && e.key === 'ArrowLeft') j = tabs.length-1; if (j >= tabs.length) j = 0;
+      if (j >= 0) { e.preventDefault(); tabs[j].focus(); select(tabs[j]); }
+    });
+  });
+  // toc scroll spy
+  var links = Array.prototype.slice.call(document.querySelectorAll('.toc a'));
+  var secs = links.map(function(a){ return document.querySelector(a.getAttribute('href')); }).filter(Boolean);
+  if ('IntersectionObserver' in window) {
+    var current = null;
+    var io = new IntersectionObserver(function(entries){
+      entries.forEach(function(en){ if (en.isIntersecting) current = en.target.id; });
+      if (current) links.forEach(function(a){ a.classList.toggle('on', a.getAttribute('href') === '#' + current); });
+    }, { rootMargin: '-10% 0px -70% 0px', threshold: 0 });
+    secs.forEach(function(s){ io.observe(s); });
+  }
+  function mark(id){ links.forEach(function(a){ a.classList.toggle('on', a.getAttribute('href') === '#' + id); }); }
+  links.forEach(function(a){ a.addEventListener('click', function(){ mark(a.getAttribute('href').slice(1)); }); });
+  window.addEventListener('scroll', function(){
+    if (window.innerHeight + window.scrollY >= document.documentElement.scrollHeight - 2 && secs.length) mark(secs[secs.length-1].id);
+  }, { passive: true });
+  if (links.length) links[0].classList.add('on');
+})();
+</script>
