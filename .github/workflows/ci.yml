@@ -10,13 +10,12 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with: { fetch-depth: 0 }
+      - run: bash scripts/sandbox-probe.sh
       - if: hashFiles('package-lock.json') != ''
         uses: actions/setup-node@v4
         with: { node-version: 22, cache: npm }
       - if: hashFiles('package-lock.json') != ''
         run: npm ci && npm run lint --if-present && npm test && npm run build --if-present
-      - if: hashFiles('package-lock.json') == ''
-        run: echo "no package-lock.json yet; ci is a no-op until the stack lands"
   promotion-guard:
     name: promotion-guard
     if: github.event_name == 'pull_request'
